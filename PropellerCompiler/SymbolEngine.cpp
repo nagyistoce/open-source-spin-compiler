@@ -306,6 +306,8 @@ SymbolTableEntry::SymbolTableEntry(const SymbolTableEntryDataTable& data)
     int nameLength = strlen(data.name)+1;
     m_data.name = new char[nameLength];
     strcpy(m_data.name, data.name);
+    m_data.operator_type_or_asm = data.operator_type_or_asm;
+    m_data.dual = data.dual;
 }
 
 SymbolEngine::SymbolEngine()

@@ -7,7 +7,7 @@
 //                                                          //
 //////////////////////////////////////////////////////////////
 //
-// PropComTest.cpp
+// PropCom.cpp
 //
 
 #include <stdio.h>
@@ -69,10 +69,9 @@ int main(int argc, char* argv[])
 // returns NULL if the file failed to open or is 0 length
 char* LoadFile(char* pFilename, int* pnLength)
 {
-    char* pBuffer = NULL;
+    char* pBuffer = 0;
 
-    FILE* pFile = NULL;
-    fopen_s(&pFile, pFilename, "rb");
+    FILE* pFile = fopen(pFilename, "rb");
     if (pFile != NULL)
     {
         // get the length of the file by seeking to the end and using ftell
@@ -82,7 +81,7 @@ char* LoadFile(char* pFilename, int* pnLength)
         if (*pnLength > 0)
         {
             pBuffer = new char[*pnLength+1]; // allocate a buffer that is the size of the file plus one char
-            pBuffer[*pnLength] = NULL; // set the end of the buffer to NULL
+            pBuffer[*pnLength] = 0; // set the end of the buffer to 0 (null)
 
             // seek back to the beginning of the file and read it in
             fseek(pFile, 0, SEEK_SET);
@@ -100,7 +99,7 @@ bool AddObjectToHeap(char* name)
     {
         int nNameBufferLength = (int)strlen(name)+1;
         s_ObjHeap[s_nObjHeapIndex].ObjFilename = new char[nNameBufferLength];
-        strcpy_s(s_ObjHeap[s_nObjHeapIndex].ObjFilename, nNameBufferLength, name);
+        strcpy(s_ObjHeap[s_nObjHeapIndex].ObjFilename, name);
         s_ObjHeap[s_nObjHeapIndex].ObjSize = s_pCompilerData->obj_ptr;
         s_ObjHeap[s_nObjHeapIndex].Obj = new char[s_pCompilerData->obj_ptr];
         memcpy(s_ObjHeap[s_nObjHeapIndex].Obj, &(s_pCompilerData->obj[0]), s_pCompilerData->obj_ptr);
@@ -143,9 +142,8 @@ bool CompileSubObject(char* pFileName)
 
 int GetData(unsigned char* pDest, char* pFileName, int nMaxSize)
 {
-    FILE* pFile = NULL;
     int nBytesRead = 0;
-    fopen_s(&pFile, pFileName, "rb");
+    FILE* pFile = fopen(pFileName, "rb");
 
     if (pFile)
     {
@@ -310,7 +308,7 @@ bool CompileRecursively(char* pFilename)
     }
 
     // first pass on object
-    char* pErrorString = Compile1();
+    const char* pErrorString = Compile1();
     if (pErrorString != 0)
     {
         printf("%s\n", pErrorString);
@@ -327,10 +325,10 @@ bool CompileRecursively(char* pFilename)
         for (int i = 0; i < s_pCompilerData->obj_files; i++)
         {
             // copy the obj filename appending .spin if it doesn't have it.
-            strcpy_s(&filenames[i<<8], 256, &(s_pCompilerData->obj_filenames[i<<8]));
+            strcpy(&filenames[i<<8], &(s_pCompilerData->obj_filenames[i<<8]));
             if (strstr(&filenames[i<<8], ".spin") == NULL)
             {
-                strcat_s(&filenames[i<<8], 256, ".spin");
+                strcat(&filenames[i<<8], ".spin");
             }
             filename_start[i] = s_pCompilerData->obj_name_start[i];
             filename_finish[i] = s_pCompilerData->obj_name_finish[i];
@@ -381,11 +379,10 @@ bool CompileRecursively(char* pFilename)
 
             //{Get name information}
             char filename[256];
-            strcpy_s(&filename[0], 256, &(s_pCompilerData->dat_filenames[i<<8]));
+            strcpy(&filename[0], &(s_pCompilerData->dat_filenames[i<<8]));
 
-            // not needed
-            //s_pCompilerData->source_start = s_pCompilerData->dat_name_start[i]+1;
-            //s_pCompilerData->source_finish = s_pCompilerData->dat_name_finish[i]-1;
+            s_pCompilerData->source_start = s_pCompilerData->dat_name_start[i]+1;
+            s_pCompilerData->source_finish = s_pCompilerData->dat_name_finish[i]-1;
             
             //{Find file}
             //if (!LocateSource(pFilename, ObjLevel))
