@@ -203,7 +203,7 @@ void DistillEliminate()
 
             // remove redundant object record from list
             g_pCompilerData->dis_ptr -= (3 + numSubObjects);
-            memmove_s(&g_pCompilerData->dis[disPtr], g_pCompilerData->dis_ptr - disPtr, &g_pCompilerData->dis[disPtr + (3 + numSubObjects)], g_pCompilerData->dis_ptr - disPtr);
+            memmove(&g_pCompilerData->dis[disPtr], &g_pCompilerData->dis[disPtr + (3 + numSubObjects)], g_pCompilerData->dis_ptr - disPtr);
 
             // restart elimination from beginning
             bRestart = true;
@@ -298,7 +298,7 @@ bool DistillObjects()
     g_pCompilerData->distilled_longs = (saved_obj_ptr - g_pCompilerData->obj_ptr) >> 2;
 
     char tempStr[64];
-    sprintf_s(tempStr, 64, "\rDistilled longs: %d", g_pCompilerData->distilled_longs);
+    sprintf(tempStr, "\rDistilled longs: %d", g_pCompilerData->distilled_longs);
     if (!PrintString(tempStr))
     {
         return false;

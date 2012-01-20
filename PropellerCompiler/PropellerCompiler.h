@@ -51,7 +51,7 @@ enum infoType
 struct CompilerData
 {
     bool            error;          // Compilation status; error if true, success if false
-    char*           error_msg;      // Pointer to error string
+    const char*     error_msg;      // Pointer to error string
 
     bool            compile_mode;   // Compile Mode; False = normal compile, True = Propeller Development compile
 
@@ -118,10 +118,10 @@ struct CompilerData
 
 // public functions
 extern CompilerData* InitStruct();
-extern char* Compile1();
-extern char* Compile2();
+extern const char* Compile1();
+extern const char* Compile2();
 
-#endif _PROPELLER_COMPILER_H_
+#endif // _PROPELLER_COMPILER_H_
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //                           TERMS OF USE: MIT License                                   //

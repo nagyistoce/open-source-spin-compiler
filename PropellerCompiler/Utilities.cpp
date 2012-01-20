@@ -41,7 +41,7 @@ bool PrintChr(char theChar)
     return true;
 }
 
-bool PrintString(char* theString)
+bool PrintString(const char* theString)
 {
     int stringOffset = 0;
     bool result = true;
@@ -55,27 +55,27 @@ bool PrintString(char* theString)
     return result;
 }
 
-bool PrintSymbol(const char* pSymbolName, symbolType type, int value)
+bool PrintSymbol(const char* pSymbolName, unsigned char type, int value)
 {
     char tempStr[64];
-    sprintf_s(tempStr, 64, "TYPE: %02X", type);
+    sprintf(tempStr, "TYPE: %02X", type);
     if (!PrintString(tempStr))
     {
         return false;
     }
-    sprintf_s(tempStr, 64, "   VALUE: %08X", value);
+    sprintf(tempStr, "   VALUE: %08X", value);
     if (!PrintString(tempStr))
     {
         return false;
     }
-    sprintf_s(tempStr, 64, "   NAME: %s\r", pSymbolName);
+    sprintf(tempStr, "   NAME: %s\r", pSymbolName);
     return PrintString(tempStr);
 }
 
 bool ListLine(int offset, int count)
 {
     char tempStr[8];
-    sprintf_s(tempStr, 8, "%04X-", offset);
+    sprintf(tempStr, "%04X-", offset);
     if (!PrintString(tempStr))
     {
         return false;
@@ -85,7 +85,7 @@ bool ListLine(int offset, int count)
     {
         if (i < count)
         {
-            sprintf_s(tempStr, 8, " %02X", g_pCompilerData->obj[offset+i]);
+            sprintf(tempStr, " %02X", g_pCompilerData->obj[offset+i]);
             if (!PrintString(tempStr))
             {
                 return false;
@@ -126,18 +126,18 @@ bool ListLine(int offset, int count)
 bool PrintObj()
 {
     char tempStr[256];
-    sprintf_s(tempStr, 256, "\rOBJ bytes: %d", g_pCompilerData->obj_ptr);
+    sprintf(tempStr, "\rOBJ bytes: %d", g_pCompilerData->obj_ptr);
     if (!PrintString(tempStr))
     {
         return false;
     }
 
-    sprintf_s(tempStr, 256, "\r\r_CLKMODE: %02X", g_pCompilerData->clkmode);
+    sprintf(tempStr, "\r\r_CLKMODE: %02X", g_pCompilerData->clkmode);
     if (!PrintString(tempStr))
     {
         return false;
     }
-    sprintf_s(tempStr, 256, "\r_CLKFREQ: %08X\r\r", g_pCompilerData->clkfreq);
+    sprintf(tempStr, "\r_CLKFREQ: %08X\r\r", g_pCompilerData->clkfreq);
     if (!PrintString(tempStr))
     {
         return false;
@@ -621,7 +621,7 @@ bool AddFileName(int& fileCount, char* pFilenames, int* pNameStart, int* pNameFi
         {
             pNameStart[fileCount] = filenameStart;
             pNameFinish[fileCount] = filenameFinish;
-            strcpy_s(&pFilenames[fileCount*256], 255, g_pCompilerData->filename);
+            strcpy(&pFilenames[fileCount*256], g_pCompilerData->filename);
             fileCount++;
             return true;
         }

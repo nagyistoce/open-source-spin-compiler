@@ -72,7 +72,7 @@ public:
     bool    GetElement(int type);               // if the next element is type, then return true, else false, retains value
     bool    CheckElement(int type);             // check if next element is of the given type, if so return true, if not, backup and return false
     bool    GetNextBlock(int type, bool& bEof); // scan for the next block element of type, returns true if no error, , bEof will be set to true if eof is hit
-    bool    FindSymbol(char* symbol);           // lookup a symbol in the symbol table and set it as the current element
+    bool    FindSymbol(const char* symbol);     // lookup a symbol in the symbol table and set it as the current element
     void    Backup();                           // backup to the previous element
 
     void    BackupSymbol();                     // copy the current symbol into g_pCompilerData->symbolBackup

@@ -13,17 +13,15 @@
 #ifndef _UTILITIES_H_
 #define _UTILITIES_H_
 
-enum symbolType;
-
 extern void SetPrint(char* pDestination, int limit);
 extern bool PrintChr(char theChar);
-extern bool PrintString(char* theString);
+extern bool PrintString(const char* theString);
 extern bool PrintLong(int value);
 extern bool PrintWord(short value);
 extern bool PrintByte(char value);
 extern bool PrintHex(char value);
 extern bool PrintDecimal(int value);
-extern bool PrintSymbol(const char* pSymbolName, symbolType type, int value);
+extern bool PrintSymbol(const char* pSymbolName, unsigned char type, int value);
 extern bool PrintObj();
 extern bool DocPrint(char theChar);
 

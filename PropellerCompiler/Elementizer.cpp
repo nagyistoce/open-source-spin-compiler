@@ -691,7 +691,7 @@ bool Elementizer::NegConToCon()
 }
 
 
-bool Elementizer::FindSymbol(char* symbol)
+bool Elementizer::FindSymbol(const char* symbol)
 {
     m_pSymbolEntry = m_pSymbolEngine->FindSymbol(symbol);
     if (m_pSymbolEntry == 0)
@@ -708,7 +708,7 @@ bool Elementizer::FindSymbol(char* symbol)
 
 void Elementizer::BackupSymbol()
 {
-    strcpy_s(m_pCompilerData->symbolBackup, symbol_limit+2, m_currentSymbol);
+    strcpy(m_pCompilerData->symbolBackup, m_currentSymbol);
 }
 
 bool Elementizer::PushState()

@@ -180,6 +180,15 @@ enum ifType
     if_always,
 };
 
+struct SymbolTableEntryDataTable
+{
+    symbolType      type;                   // what type of symbol is it?
+    int             value;                  // value is type dependant
+    const char*     name;                   // the string of the symbol
+    unsigned char   operator_type_or_asm;   // operator type for op symbols, or asm value for dual symbols
+    bool            dual;                   // indicates that this symbol is used by both PASM and spin
+};
+
 struct SymbolTableEntryData
 {
     symbolType      type;                   // what type of symbol is it?
@@ -196,24 +205,12 @@ public:
     {
         m_data.name = 0;
     }
-    SymbolTableEntry(const SymbolTableEntryData& data)
-        : m_data(data)
-    {
-    }
-    SymbolTableEntryData m_data;
-};
-
-// The only difference for a user symbol table entry is that it needs to free the memory for the name string
-class SymbolTableEntryUser : public SymbolTableEntry
-{
-public:
-    SymbolTableEntryUser()
-    {
-    }
-    ~SymbolTableEntryUser()
+    SymbolTableEntry(const SymbolTableEntryDataTable& data);
+    ~SymbolTableEntry()
     {
         delete [] m_data.name;
     }
+    SymbolTableEntryData m_data;
 };
 
 class SymbolEngine

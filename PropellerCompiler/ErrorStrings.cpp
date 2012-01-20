@@ -10,7 +10,7 @@
 // ErrorStrings.cpp
 //
 
-char* g_pErrorStrings[] = 
+const char* g_pErrorStrings[] = 
 {
     "Address is not long",
     "Address is out of range",

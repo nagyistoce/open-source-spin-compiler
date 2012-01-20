@@ -136,7 +136,7 @@ enum errorType
     error_vnao
 };
 
-extern char* g_pErrorStrings[];
+extern const char* g_pErrorStrings[];
 
 #endif // _ERROR_STRINGS_H_
 

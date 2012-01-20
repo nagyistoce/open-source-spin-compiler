@@ -98,7 +98,7 @@ CompilerData* InitStruct()
 //              byte    'CONn', 16, values              ;CON names and values
 //
 
-char* Compile1()
+const char* Compile1()
 {
     g_pElementizer->Reset();
     g_pSymbolEngine->Reset();
@@ -146,7 +146,7 @@ char* Compile1()
     return 0;
 }
 
-char* Compile2()
+const char* Compile2()
 {
     if (!CompileObjSymbols())
     {
@@ -1398,7 +1398,7 @@ bool CompileFinal()
         }
 
         // shift contents of obj up 4 bytes (to insert vsize/psize at front)
-        memmove_s(&(g_pCompilerData->obj[4]), obj_limit - 4, &(g_pCompilerData->obj[0]), obj_limit - 4);
+        memmove(&(g_pCompilerData->obj[4]), &(g_pCompilerData->obj[0]), obj_limit - 4);
         // insert vsize_psize at beginning on obj
         *((int*)(&g_pCompilerData->obj[0])) = vsize_psize;
 
@@ -1433,7 +1433,7 @@ bool PointToFirstCon()
     return true;
 }
 
-bool Determine_GetSymbol(char* pSymbol, int errorCode, bool& bFound)
+bool Determine_GetSymbol(const char* pSymbol, int errorCode, bool& bFound)
 {
     bFound = false;
     if (g_pElementizer->FindSymbol(pSymbol))
