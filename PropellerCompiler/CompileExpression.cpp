@@ -142,6 +142,7 @@ bool CompileSubExpression_Term()
 bool CompileSubExpression(int precedence)
 {
     int savedValue = g_pElementizer->GetValue();
+    int savedOpType = g_pElementizer->GetOpType();
 
     precedence--;
     if (precedence < 0)
@@ -151,6 +152,7 @@ bool CompileSubExpression(int precedence)
             return false;
         }
         g_pElementizer->SetValue(savedValue);
+        g_pElementizer->SetOpType(savedOpType);
         return true;
     }
     else
@@ -191,6 +193,7 @@ bool CompileSubExpression(int precedence)
     }
 
     g_pElementizer->SetValue(savedValue);
+    g_pElementizer->SetOpType(savedOpType);
     return true;
 }
 
@@ -412,7 +415,7 @@ bool CompileLook(int column, int param)
     param &= 0xFF; // we only care about the bottom byte
 
     unsigned char byteCode = 0x35; // constant 0
-    if (param > 0x80) // zero based?
+    if (param < 0x80) // zero based?
     {
         byteCode += 1; // not, so make it a constant 1
     }

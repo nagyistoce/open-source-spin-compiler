@@ -39,14 +39,35 @@ int     s_nObjStackPtr = 0;
 CompilerData* s_pCompilerData = NULL;
 
 bool CompileRecursively(char* pFilename);
+void ComposeRAM(unsigned char** ppBuffer, int& bufferSize);
 
 int main(int argc, char* argv[])
 {
+    printf("Propeller Spin/PASM Compiler (c)2012 Parallax Inc. DBA Parallax Semiconductor.\n");
+    printf("Compiled on %s\n",__DATE__);
     if (argc < 2)
     {
-        printf("Usage: propcomp <spinfile>\n");
+        printf("Program Usage: propcomp <spinfile>\n");
         return 1;
     }
+
+    // create *.binary filename from user passed in spin filename
+    char binaryFilename[256];
+    strcpy(&binaryFilename[0], argv[argc-1]);
+    const char* pTemp = strstr(&binaryFilename[0], ".spin");
+    if (pTemp == 0)
+    {
+        printf("spinfile must have .spin extension. You passed in: %s", argv[argc-1]);
+        return 1;
+    }
+    else
+    {
+        int offset = pTemp - &binaryFilename[0];
+        binaryFilename[offset+1] = 0;
+        strcat(&binaryFilename[0], "binary");
+    }
+
+    printf("Compileing %s...", argv[argc-1]);
 
     s_pCompilerData = InitStruct();
 
@@ -56,8 +77,6 @@ int main(int argc, char* argv[])
     s_pCompilerData->doc = new char[DocLimit];
     s_pCompilerData->doc_limit = DocLimit;
 
-    printf("Compileing %s...", argv[argc-1]);
-
     if (!CompileRecursively(argv[argc-1]))
     {
         printf("Failed.\n");
@@ -65,6 +84,18 @@ int main(int argc, char* argv[])
     }
 
     printf("Done.\n");
+
+
+    unsigned char* pBuffer = NULL;
+    int bufferSize = 0;
+    ComposeRAM(&pBuffer, bufferSize);
+    FILE* pFile = fopen(binaryFilename, "wb");
+    if (pFile)
+    {
+        fwrite(pBuffer, bufferSize, 1, pFile);
+        fclose(pFile);
+    }
+    delete [] pBuffer;
 
     // do stuff with list and/or doc here
     int listOffset = 0;
@@ -92,6 +123,54 @@ int main(int argc, char* argv[])
     delete [] s_pCompilerData->doc;
 
     return 0;
+}
+
+void ComposeRAM(unsigned char** ppBuffer, int& bufferSize)
+{
+  unsigned short varsize = *((unsigned short*)&(s_pCompilerData->obj[0]));                      // variable size (in bytes)
+  unsigned short codsize = *((unsigned short*)&(s_pCompilerData->obj[2]));                      // code size (in bytes)
+  unsigned short pubaddr = *((unsigned short*)&(s_pCompilerData->obj[8]));                      // address of first public method
+  unsigned short publocs = *((unsigned short*)&(s_pCompilerData->obj[10]));                     // number of stack variables (locals), in bytes, for the first public method
+  unsigned short pbase = 0x0010;                                                                // base of object code
+  unsigned short vbase = pbase + codsize;                                                       // variable base = object base + code size
+  unsigned short dbase = vbase + varsize + 8;                                                   // data base = variable base + variable size + 8
+  unsigned short pcurr = pbase + pubaddr;                                                       // Current program start = object base + public address (first public method)
+  unsigned short dcurr = dbase + 4 + (s_pCompilerData->first_pub_parameters << 2) + publocs;    // current data stack pointer = data base + 4 + FirstParams*4 + publocs
+
+  //Result := vbase shr 2;                                                        {number of longs to be downloaded}
+
+  // reset ram
+  *ppBuffer = new unsigned char[vbase];
+  memset(*ppBuffer, 0, vbase);
+  bufferSize = vbase;
+
+  // set clock frequency and clock mode
+  *((int*)&((*ppBuffer)[0])) = s_pCompilerData->clkfreq;
+  (*ppBuffer)[4] = s_pCompilerData->clkmode;
+
+  // set interpreter parameters
+  ((unsigned short*)&((*ppBuffer)[4]))[1] = pbase;         // always 0x0010
+  ((unsigned short*)&((*ppBuffer)[4]))[2] = vbase;
+  ((unsigned short*)&((*ppBuffer)[4]))[3] = dbase;
+  ((unsigned short*)&((*ppBuffer)[4]))[4] = pcurr;
+  ((unsigned short*)&((*ppBuffer)[4]))[5] = dcurr;
+
+  // set code
+  memcpy(&((*ppBuffer)[pbase]), &(s_pCompilerData->obj[4]), codsize);
+
+//  {set initial call frame}  {This removed because it is now done by Propeller Chip (and on-the-fly by Propeller Tool only when necessary)}
+//  PWordArray(@Buffer[dbase - 8])[0] := $FFFF;     {pbase}   {See Info's constant declaration, InitCallFrame, for more information}
+//  PWordArray(@Buffer[dbase - 8])[1] := $FFF9;     {vbase}
+//  PWordArray(@Buffer[dbase - 8])[2] := $FFFF;     {dbase}
+//  PWordArray(@Buffer[dbase - 8])[3] := $FFF9;     {pcurr}
+
+  // install ram checksum byte
+  unsigned char sum = 0;
+  for (int i = 0; i < vbase; i++)
+  {
+      sum = sum + (*ppBuffer)[i];
+  }
+  (*ppBuffer)[5] = (unsigned char)((-(sum+2028)) );
 }
 
 // returns NULL if the file failed to open or is 0 length

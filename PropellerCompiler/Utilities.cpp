@@ -704,8 +704,8 @@ bool ConAssign(bool bFloat)
         }
 
         g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, bFloat ? type_con_float : type_con, value);
-        float fValue = *((float*)(&value));
 #ifdef RPE_DEBUG
+        float fValue = *((float*)(&value));
         printf("%s %d %f \n", g_pCompilerData->symbolBackup, value, fValue);
 #endif
     }

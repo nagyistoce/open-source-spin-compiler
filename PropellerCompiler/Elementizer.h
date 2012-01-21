@@ -109,6 +109,10 @@ public:
     {
         m_value = value; 
     }
+    void    SetOpType(int opType)                 // used by CompileSubExpression only
+    {
+        m_opType = opType; 
+    }
 };
 
 #endif // _ELEMENTIZER_H_

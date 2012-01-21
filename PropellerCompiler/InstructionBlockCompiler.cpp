@@ -132,7 +132,7 @@ bool CompileBlock(int column)
 
 bool CompileIfOrIfNot_FinalJmp(int& addressCount)
 {
-    if (!EnterObj(0x08)) // jmp
+    if (!EnterObj(0x04)) // jmp
     {
         return false;
     }
