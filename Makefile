@@ -1,7 +1,6 @@
 CC=gcc
 CXX=g++
 CFLAGS+=-DGCC
-CXXFLAGS += $(CFLAGS)
 
 
 NAME=propcomp
@@ -9,30 +8,18 @@ TARGET=PropCom
 MAIN=$(TARGET)/$(TARGET)
 MAINOBJ=$(MAIN).o
 MAINSRC=$(MAIN).cpp
-SRCDIR=PropellerCompiler
-OBJ=$(SRCDIR)/BlockNestStackRoutines.o \
-    $(SRCDIR)/CompileDatBlocks.o \
-    $(SRCDIR)/CompileExpression.o \
-    $(SRCDIR)/CompileInstruction.o \
-    $(SRCDIR)/CompileUtilities.o \
-    $(SRCDIR)/DistillObjects.o \
-    $(SRCDIR)/Elementizer.o \
-    $(SRCDIR)/ErrorStrings.o \
-    $(SRCDIR)/ExpressionResolver.o \
-    $(SRCDIR)/InstructionBlockCompiler.o \
-    $(SRCDIR)/StringConstantRoutines.o \
-    $(SRCDIR)/SymbolEngine.o \
-    $(SRCDIR)/Utilities.o \
-    $(SRCDIR)/PropellerCompiler.o \
+LIBDIR=PropellerCompiler
+LIBNAME=$(LIBDIR)/libpropcomp.a
 
 
-all: $(OBJ) Makefile
-	$(CXX) -o $(NAME) $(CFLAGS) $(MAINSRC) $(OBJ)
+all: $(LIBNAME) Makefile
+	$(CXX) -o $(NAME) $(CFLAGS) $(MAINSRC) $(LIBNAME)
 
 
-%.o: %.cpp
-	$(CXX) $(CXXFLAGS) -o $@ -c $<
+$(LIBNAME):
+	make -C $(LIBDIR) all
 
 
 clean:
-	rm -rf $(SRCDIR)/*.o $(MAINOBJ) $(NAME)
+	rm -rf $(MAINOBJ) $(LIBNAME)
+	make -C $(LIBDIR) clean
