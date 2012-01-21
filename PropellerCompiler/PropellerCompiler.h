@@ -13,6 +13,10 @@
 #ifndef _PROPELLER_COMPILER_H_
 #define _PROPELLER_COMPILER_H_
 
+#ifdef GCC
+#define _stricmp strcasecmp
+#endif
+
 //
 // Everything here needs to stay in the order it is in (for the enums and struct) and remain 
 // the same size, in order to be the same as the asm code version and work with Prop Tool / Propellent

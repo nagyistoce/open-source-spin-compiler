@@ -12,7 +12,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <tchar.h>
 #include <string.h>
 
 #include "../PropellerCompiler/PropellerCompiler.h"
@@ -43,21 +42,50 @@ bool CompileRecursively(char* pFilename);
 
 int main(int argc, char* argv[])
 {
+    if (argc < 2)
+    {
+        printf("Usage: propcomp <spinfile>\n");
+        return 1;
+    }
+
     s_pCompilerData = InitStruct();
 
     s_pCompilerData->list = new char[ListLimit];
     s_pCompilerData->list_limit = ListLimit;
     memset(s_pCompilerData->list, 0, ListLimit);
-    //s_pCompilerData->list[ListLimit] = 0;
     s_pCompilerData->doc = new char[DocLimit];
     s_pCompilerData->doc_limit = DocLimit;
 
+    printf("Compileing %s...", argv[argc-1]);
+
     if (!CompileRecursively(argv[argc-1]))
     {
+        printf("Failed.\n");
         return 1;
     }
 
+    printf("Done.\n");
+
     // do stuff with list and/or doc here
+    int listOffset = 0;
+    while (listOffset < s_pCompilerData->list_length)
+    {
+        char* pTemp = strstr(&(s_pCompilerData->list[listOffset]), "\r");
+        if (pTemp)
+        {
+            *pTemp = 0;
+        }
+        printf("%s\n", &(s_pCompilerData->list[listOffset]));
+        if (pTemp)
+        {
+            *pTemp = 0x0D;
+            listOffset += pTemp - &(s_pCompilerData->list[listOffset]);
+        }
+        while (s_pCompilerData->list[listOffset] < 32 && listOffset < s_pCompilerData->list_length)
+        {
+            listOffset++;
+        }
+    }
 
     // cleanup
     delete [] s_pCompilerData->list;

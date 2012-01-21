@@ -593,7 +593,9 @@ bool CompileSubBlocksId_Compile(int blockType, bool &bFirst)
                     value <<= 8;
                     value |= (g_pCompilerData->obj_ptr >> 2) & 0xFF;
                     g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, type_sub, value);
+#ifdef RPE_DEBUG
                     printf("Pub/Pri %s %d (%d, %d)\n", g_pCompilerData->symbolBackup, value, params, g_pCompilerData->obj_ptr);
+#endif
 
                     // enter locals count into index
                     EnterObjLong(locals<<16);
@@ -735,7 +737,9 @@ bool CompileObjBlocksId()
                     value <<= 8;
                     value |= (g_pCompilerData->obj_ptr >> 2) & 0xFF;
                     g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, type_obj, value);
+#ifdef RPE_DEBUG
                     printf("Obj %s %d (%d, %d)\n", g_pCompilerData->symbolBackup, value, instanceCount, g_pCompilerData->obj_ptr);
+#endif
 
                     for (int i=0; i < instanceCount; i++)
                     {
@@ -899,7 +903,9 @@ bool CompileObjSymbols()
                     {
                         int value = nPub | ((int)pData[0] << 8);
                         g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, type_objpub, value);
+#ifdef RPE_DEBUG
                         printf("objpub: %s %d \n", g_pCompilerData->symbolBackup, value);
+#endif
                         pData++; // adjust pointer to after param count
                         nPub++;
                         break;
@@ -909,7 +915,9 @@ bool CompileObjSymbols()
                         int value = *((int*)(&pData[1]));
                         g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, (pData[0] == 16) ? type_objcon : type_objcon_float, value);
                         float fValue = *((float*)(&value));
+#ifdef RPE_DEBUG
                         printf("objcon: %s %d %f \n", g_pCompilerData->symbolBackup, value, fValue);
+#endif
                         pData+=5; // adjust pointer to after value
                         break;
                     }
@@ -1017,7 +1025,9 @@ bool CompileVarBlocks()
 
                         // add the symbol
                         g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, (nSize == 0) ? type_var_byte : ((nSize == 1) ? type_var_word : type_var_long), nValue);
+#ifdef RPE_DEBUG
                         printf("var: %s %d (%d, %d)\n", g_pCompilerData->symbolBackup, nValue, nSize, nCount);
+#endif
 
                         bool bComma = false;
                         if (!GetCommaOrEnd(bComma))
@@ -1096,7 +1106,9 @@ bool CompileSubBlocks_Compile(int blockType, int &subCount)
                             g_pElementizer->BackupSymbol();
 
                             g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, type_loc_long, locals, true); // add to temp symbols
+#ifdef RPE_DEBUG
                             printf("temp loc: %s %d\n", g_pCompilerData->symbolBackup, locals);
+#endif
 
                             locals += 4;
 
@@ -1146,7 +1158,9 @@ bool CompileSubBlocks_Compile(int blockType, int &subCount)
                         // we don't increment locals, because result local is already accounted for
                         g_pElementizer->BackupSymbol();
                         g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, type_loc_long, 0, true);
+#ifdef RPE_DEBUG
                         printf("result: %s %d\n", g_pCompilerData->symbolBackup, 0);
+#endif
                     }
                 }
 
@@ -1192,6 +1206,7 @@ bool CompileSubBlocks_Compile(int blockType, int &subCount)
                             }
 
                             g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, type_loc_long, locals, true); // add to temp symbols
+#ifdef RPE_DEBUG
                             if (sizeOfThisLocal > 4)
                             {
                                 printf("temp loc: %s[%d] %d\n", g_pCompilerData->symbolBackup, sizeOfThisLocal/4, locals);
@@ -1200,7 +1215,7 @@ bool CompileSubBlocks_Compile(int blockType, int &subCount)
                             {
                                 printf("temp loc: %s %d\n", g_pCompilerData->symbolBackup, locals);
                             }
-
+#endif
                             locals += sizeOfThisLocal;
 
                             bool bComma = false;

@@ -38,7 +38,9 @@ void CompileDatBlocks_EnterSymbol(bool bResSymbol, int size)
     g_pCompilerData->inf_type = info_dat_symbol;
     EnterInfo();
     g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, bResSymbol ? type_dat_long_res : (size == 0 ? type_dat_byte : (size == 1 ? type_dat_word : type_dat_long)), value);
+#ifdef RPE_DEBUG
     printf("dat: %s %08X (%d)\n", g_pCompilerData->symbolBackup, value, size);
+#endif
 }
 
 bool CompileDatBlocks_EnterByte(unsigned char value)
