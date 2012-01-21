@@ -7,14 +7,10 @@ Here's the current state of the compiler.
 
 = Details =
 
-The solution/project files are for VS2008. Others will be added.
-
-The source code doesn't use any MS specific stuff, so it should compile with gcc (or other compilers). 
+The solution/project files are for VS2008, and there is a Makefile for GCC (tested on MinGW and linux so far, Thanks Steve, for the Makefile and testing on linux!)
 
 PropellerCompiler.cpp/h contain the interface to the compiler.
 
-PropComp.cpp is the beginnings of a command line compiler wrapper for the compiler. It currently passes spin files through the compiler and displays a bunch of debug info and any error messages. This will eventually produce proper .binary files that can be uploaded to the Propeller.
+PropComp.cpp is the beginnings of a command line wrapper for the compiler. It currently passes spin files through the compiler and displays the contents of the "list" output from the compiler code or an error message the compiler returned. This will eventually produce proper .binary files that can be uploaded to the Propeller.
 
 The code successfully compiles a test.spin file that references "Parallax Serial Terminal" (which currently has to be in the same directory). It contains the PASM portion of the pasm_i2c_driver, and some other random test stuff.  I have verified that the main object binary matches what proptool outputs for the same file. However, I don't have the code ported from Delphi yet that puts it into the proper .binary form, so I had to do this in the debugger using memory windows.
-
-Using MinGW I was able to compile all the source files with g++ (gcc). I fixed all the errors and warnings, but still need a build script in order to produce the proper library and executable.
