@@ -11,6 +11,6 @@ The solution/project files are for VS2008, and there is a Makefile for GCC (test
 
 PropellerCompiler.cpp/h contain the interface to the compiler.
 
-PropComp.cpp is a command line wrapper for the compiler. You give it a spin file and it passes it through the compiler and produces a .binary file with the same base name as the passed in spin file. It also, optionally (-v), displays the contents of the "list" output from the compiler code.
+spin.exe (compiled from spin/spin.cpp) is a command line wrapper for the compiler. You give it a spin file and it passes it through the compiler and produces a .binary file with the same base name as the passed in spin file. It also, optionally (-v), displays the contents of the "list" output from the compiler code.
 
 The code now successfully compiles several of the Library Demos that come with the Prop Tool v1.3.
