@@ -221,6 +221,18 @@ const char* Compile2()
     return 0;
 }
 
+bool GetErrorInfo(int& lineNumber, int& column)
+{
+    if (g_pCompilerData && g_pCompilerData->error)
+    {
+        lineNumber = g_pElementizer->GetCurrentLineNumber();
+        column = g_pElementizer->GetColumn();
+        return true;
+    }
+
+    return false;
+}
+
 //////////////////////////////////////////
 // internal function definitions
 //
@@ -229,10 +241,11 @@ bool CompileDevBlocks()
 {
     g_pCompilerData->pre_files = 0;
     g_pCompilerData->arc_files = 0;
+    int index = 0;
 
     bool bEof = false;
     g_pElementizer->Reset();
-    
+
     while (!bEof)
     {
         if(g_pElementizer->GetNextBlock(block_dev, bEof))
@@ -249,7 +262,8 @@ bool CompileDevBlocks()
                 }
                 if (g_pElementizer->GetType() == type_precompile)
                 {
-                    if (!AddFileName(g_pCompilerData->pre_files, 
+                    if (!AddFileName(g_pCompilerData->pre_files,
+                                     index,
                                      g_pCompilerData->pre_filenames,
                                      g_pCompilerData->pre_name_start,
                                      g_pCompilerData->pre_name_finish,
@@ -265,7 +279,8 @@ bool CompileDevBlocks()
                 }
                 else if (g_pElementizer->GetType() == type_archive)
                 {
-                    if (!AddFileName(g_pCompilerData->arc_files, 
+                    if (!AddFileName(g_pCompilerData->arc_files,
+                                     index,
                                      g_pCompilerData->arc_filenames,
                                      g_pCompilerData->arc_name_start,
                                      g_pCompilerData->arc_name_finish,
@@ -706,7 +721,7 @@ bool CompileObjBlocksId()
                         {
                             return false;
                         }
-                    }						
+                    }
 
                     // must have the colon
                     if (!g_pElementizer->GetElement(type_colon))
@@ -714,9 +729,10 @@ bool CompileObjBlocksId()
                         return false;
                     }
 
-                    int oldObjFilesCount = g_pCompilerData->obj_files;
+                    int objFileIndex = 0;
                     // now get the filename
-                    if (!AddFileName(g_pCompilerData->obj_files, 
+                    if (!AddFileName(g_pCompilerData->obj_files,
+                                     objFileIndex,
                                      g_pCompilerData->obj_filenames,
                                      g_pCompilerData->obj_name_start,
                                      g_pCompilerData->obj_name_finish,
@@ -726,14 +742,14 @@ bool CompileObjBlocksId()
                     }
 
                     // is it a new obj?
-                    if (oldObjFilesCount != g_pCompilerData->obj_files)
+                    if (objFileIndex == (g_pCompilerData->obj_files - 1))
                     {
                         // reset instances
-                        g_pCompilerData->obj_instances[g_pCompilerData->obj_files-1] = 0;
+                        g_pCompilerData->obj_instances[objFileIndex] = 0;
                     }
 
                     // enter obj symbol
-                    int value = g_pCompilerData->obj_files-1;
+                    int value = objFileIndex;
                     value <<= 8;
                     value |= (g_pCompilerData->obj_ptr >> 2) & 0xFF;
                     g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, type_obj, value);
@@ -746,7 +762,7 @@ bool CompileObjBlocksId()
                         if (g_pCompilerData->obj_ptr < 256*4)
                         {
                             // enter locals count into index
-                            EnterObjLong(g_pCompilerData->obj_files-1);
+                            EnterObjLong(objFileIndex);
                             g_pCompilerData->obj_count++;
                         }
                         else
@@ -758,7 +774,7 @@ bool CompileObjBlocksId()
                     }
 
                     // accumulate instances
-                    g_pCompilerData->obj_instances[g_pCompilerData->obj_files-1] += instanceCount;
+                    g_pCompilerData->obj_instances[objFileIndex] += instanceCount;
 
                     if (!g_pElementizer->GetElement(type_end))
                     {
@@ -785,6 +801,7 @@ bool CompileObjBlocksId()
 bool CompileDatBlocksFileNames()
 {
     g_pCompilerData->dat_files = 0;
+    int index = 0;
 
     bool bEof = false;
     g_pElementizer->Reset();
@@ -805,7 +822,8 @@ bool CompileDatBlocksFileNames()
                 }
                 if (g_pElementizer->GetType() == type_file)
                 {
-                    if (!AddFileName(g_pCompilerData->dat_files, 
+                    if (!AddFileName(g_pCompilerData->dat_files,
+                                     index,
                                      g_pCompilerData->dat_filenames,
                                      g_pCompilerData->dat_name_start,
                                      g_pCompilerData->dat_name_finish,
@@ -914,8 +932,8 @@ bool CompileObjSymbols()
                     {
                         int value = *((int*)(&pData[1]));
                         g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, (pData[0] == 16) ? type_objcon : type_objcon_float, value);
-                        float fValue = *((float*)(&value));
 #ifdef RPE_DEBUG
+                        float fValue = *((float*)(&value));
                         printf("objcon: %s %d %f \n", g_pCompilerData->symbolBackup, value, fValue);
 #endif
                         pData+=5; // adjust pointer to after value
@@ -1292,9 +1310,9 @@ bool CompileObjBlocks()
 {
     // calculate var_ptr and align to long
     g_pCompilerData->var_ptr = g_pCompilerData->var_byte + g_pCompilerData->var_word + g_pCompilerData->var_long;
-    if ((g_pCompilerData->var_ptr & 0x03) != 0)
+    if ((g_pCompilerData->var_ptr & 0x00000003) != 0)
     {
-        g_pCompilerData->var_ptr = (g_pCompilerData->var_ptr | 0x03) + 1;
+        g_pCompilerData->var_ptr = (g_pCompilerData->var_ptr | 0x00000003) + 1;
     }
     if (g_pCompilerData->var_ptr > var_limit)
     {
@@ -1304,7 +1322,7 @@ bool CompileObjBlocks()
     }
 
     // align obj_ptr to long
-    while ((g_pCompilerData->obj_ptr & 0x03) != 0)
+    while ((g_pCompilerData->obj_ptr & 0x00000003) != 0)
     {
         if (!EnterObj(0))
         {
@@ -1340,9 +1358,9 @@ bool CompileObjBlocks()
         unsigned short psize = *((unsigned short*)(pObj));
         pObj += 2;
 
-        for (unsigned short i = 0; i < psize; i++)
+        for (unsigned short j = 0; j < psize; j++)
         {
-            if (!EnterObj(pObj[i]))
+            if (!EnterObj(pObj[j]))
             {
                 return false;
             }

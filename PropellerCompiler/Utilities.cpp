@@ -601,7 +601,7 @@ bool IncrementAsmLocal()
     return true;
 }
 
-bool AddFileName(int& fileCount, char* pFilenames, int* pNameStart, int* pNameFinish, int error)
+bool AddFileName(int& fileCount, int& fileIndex, char* pFilenames, int* pNameStart, int* pNameFinish, int error)
 {
     int filenameStart = 0;
     int filenameFinish = 0;
@@ -612,6 +612,7 @@ bool AddFileName(int& fileCount, char* pFilenames, int* pNameStart, int* pNameFi
             if (strcmp(&pFilenames[i*256], g_pCompilerData->filename) == 0)
             {
                 // filename already in list
+                fileIndex = i;
                 return true;
             }
         }
@@ -622,6 +623,7 @@ bool AddFileName(int& fileCount, char* pFilenames, int* pNameStart, int* pNameFi
             pNameStart[fileCount] = filenameStart;
             pNameFinish[fileCount] = filenameFinish;
             strcpy(&pFilenames[fileCount*256], g_pCompilerData->filename);
+            fileIndex = fileCount;
             fileCount++;
             return true;
         }

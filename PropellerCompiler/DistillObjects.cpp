@@ -34,7 +34,7 @@ bool DistillSetup_Enter(short value)
     return true;
 }
 
-bool DistillSetup_Record(short id, short offset, short subObjectId)
+bool DistillSetup_Record(short id, short offset, short& subObjectId)
 {
     if (!DistillSetup_Enter(id))
     {
@@ -51,9 +51,10 @@ bool DistillSetup_Record(short id, short offset, short subObjectId)
     }
     if (numSubObjects > 0)
     {
+        short startingSubObjectId = subObjectId;
         for (short i = 0; i < numSubObjects; i++)
         {
-            if (!DistillSetup_Enter(subObjectId + i))
+            if (!DistillSetup_Enter(subObjectId++))
             {
                 return false;
             }
@@ -63,7 +64,7 @@ bool DistillSetup_Record(short id, short offset, short subObjectId)
         for (short i = 0; i < numSubObjects; i++)
         {
             short offsetAdjust = *((short*)&(g_pCompilerData->obj[offset + ((nextSubObjects + i) * 4)]));
-            if (!DistillSetup_Record(subObjectId + i, offset + offsetAdjust, subObjectId + numSubObjects))
+            if (!DistillSetup_Record(startingSubObjectId + i, offset + offsetAdjust, subObjectId))
             {
                 return false;
             }
@@ -76,7 +77,8 @@ bool DistillSetup_Record(short id, short offset, short subObjectId)
 bool DistillSetup()
 {
     g_pCompilerData->dis_ptr = 0;
-    if (!DistillSetup_Record(0, 0, 1))
+    short subObjectId = 1;
+    if (!DistillSetup_Record(0, 0, subObjectId))
     {
         return false;
     }
@@ -97,7 +99,7 @@ bool DistillSetup()
             for (int i = 0; i < numSubObjects; i++)
             {
                 *((short*)&pObj[0]) = 0;
-                pObj += 2;
+                pObj += 4;
             }
         }
 
@@ -203,7 +205,7 @@ void DistillEliminate()
 
             // remove redundant object record from list
             g_pCompilerData->dis_ptr -= (3 + numSubObjects);
-            memmove(&g_pCompilerData->dis[disPtr], &g_pCompilerData->dis[disPtr + (3 + numSubObjects)], g_pCompilerData->dis_ptr - disPtr);
+            memmove(&g_pCompilerData->dis[disPtr], &g_pCompilerData->dis[disPtr + (3 + numSubObjects)], (g_pCompilerData->dis_ptr - disPtr) * 2);
 
             // restart elimination from beginning
             bRestart = true;
@@ -218,7 +220,7 @@ void DistillEliminate()
             disPtr += (3 + numSubObjects);
             continue;
         }
-    }		
+    }
 }
 
 static unsigned char s_rebuildBuffer[obj_limit];
@@ -275,7 +277,7 @@ void DistillReconnect(int disPtr = 0)
             }
 
             // enter relative offset of sub-object
-            pSubObjectOffsetList[i] = g_pCompilerData->dis[scanDisPtr + 1] - objectOffset;
+            pSubObjectOffsetList[i*2] = g_pCompilerData->dis[scanDisPtr + 1] - objectOffset;
 
             // call recursively to reconnect and sub-objects' sub-objects
             DistillReconnect(scanDisPtr);

@@ -49,7 +49,7 @@ extern bool EnterObjLong(int value);
 
 extern bool IncrementAsmLocal();
 
-extern bool AddFileName(int& fileCount, char* pFilenames, int* pNameStart, int* pNameFinish, int error);
+extern bool AddFileName(int& fileCount, int& fileIndex, char* pFilenames, int* pNameStart, int* pNameFinish, int error);
 extern bool AddPubConListByte(char value);
 extern bool AddSymbolToPubConList();
 extern bool ConAssign(bool bFloat);

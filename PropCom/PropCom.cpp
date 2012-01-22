@@ -41,23 +41,189 @@ CompilerData* s_pCompilerData = NULL;
 bool CompileRecursively(char* pFilename);
 void ComposeRAM(unsigned char** ppBuffer, int& bufferSize);
 
+//
+// code for handling directory paths (used with -I option)
+//
+
+#define PATH_MAX 256
+#if defined(WIN32)
+#define DIR_SEP     '\\'
+#define DIR_SEP_STR "\\"
+#else
+#define DIR_SEP     '/'
+#define DIR_SEP_STR "/"
+#endif
+
+struct PathEntry
+{
+    PathEntry *next;
+    char path[1];
+};
+
+static PathEntry *path = NULL;
+static PathEntry **pNextPathEntry = &path;
+
+static const char *MakePath(PathEntry *entry, const char *name)
+{
+    static char fullpath[PATH_MAX];
+    sprintf(fullpath, "%s%c%s", entry->path, DIR_SEP, name);
+    return fullpath;
+}
+
+bool AddPath(const char *path)
+{
+    PathEntry* entry = (PathEntry*)new char[(sizeof(PathEntry) + strlen(path))];
+    if (!(entry))
+    {
+        return false;
+    }
+    strcpy(entry->path, path);
+    *pNextPathEntry = entry;
+    pNextPathEntry = &entry->next;
+    entry->next = NULL;
+    return true;
+}
+
+bool AddFilePath(const char *name)
+{
+    const char* end = strrchr(name, DIR_SEP);
+    if (!end)
+    {
+        return false;
+    }
+    int len = (int)(end - name);
+    PathEntry *entry = (PathEntry*)new char[(sizeof(PathEntry) + len)];
+    if (!entry)
+    {
+        return false;
+    }
+    strncpy(entry->path, name, len);
+    entry->path[len] = '\0';
+    *pNextPathEntry = entry;
+    pNextPathEntry = &entry->next;
+    entry->next = NULL;
+
+    return true;
+}
+
+FILE* OpenFileInPath(const char *name, const char *mode)
+{
+    FILE* file = fopen(name, mode);
+    if (!file)
+    {
+        for (PathEntry* entry = path; entry != NULL; entry = entry->next)
+        {
+            file = fopen(MakePath(entry, name), mode);
+            if (file != NULL)
+            {
+                break;
+            }
+        }
+    }
+    return file;
+}
+
+
+static void Banner(void)
+{
+    fprintf(stdout, "Propeller Spin/PASM Compiler (c)2012 Parallax Inc. DBA Parallax Semiconductor.\n");
+    fprintf(stdout, "Compiled on %s\n",__DATE__);
+}
+
+/* Usage - display a usage message and exit */
+static void Usage(void)
+{
+    Banner();
+    fprintf(stderr, "\
+usage: propeller-load\n\
+         [ -I <path> ]     add a directory to the include path\n\
+         [ -q ]            quiet mode (suppress banner and non-error text)\n\
+         [ -v ]            verbose output\n\
+         <name.spin>       spin file to compile\n\
+\n");
+    exit(1);
+}
+
 int main(int argc, char* argv[])
 {
-    printf("Propeller Spin/PASM Compiler (c)2012 Parallax Inc. DBA Parallax Semiconductor.\n");
-    printf("Compiled on %s\n",__DATE__);
-    if (argc < 2)
+    char* infile = NULL;
+    char* p = NULL;
+    bool bVerbose = false;
+    bool bQuiet = false;
+    bool bDATonly = false;
+
+    // get the arguments
+    for(int i = 1; i < argc; i++)
     {
-        printf("Program Usage: propcomp <spinfile>\n");
+        // handle switches
+        if(argv[i][0] == '-') 
+        {
+            switch(argv[i][1]) 
+            {
+            case 'I':
+                if(argv[i][2])
+                {
+                    p = &argv[i][2];
+                }
+                else if(++i < argc)
+                {
+                    p = argv[i];
+                }
+                else
+                {
+                    Usage();
+                    return 1;
+                }
+                AddPath(p);
+                break;
+
+            case 'c':
+                bDATonly = true;
+                break;
+
+            case 'q':
+                bQuiet = true;
+                break;
+
+            case 'v':
+                bVerbose = true;
+                break;
+
+            default:
+                Usage();
+                return 1;
+                break;
+            }
+        }
+        else // handle the input filename
+        {
+            if (infile)
+            {
+                Usage();
+                return 1;
+            }
+            infile = argv[i];
+        }
+    }
+
+    // must have input file
+    if (!infile)
+    {
+        Usage();
         return 1;
     }
 
+    // finish the include path
+    AddFilePath(infile);
+
     // create *.binary filename from user passed in spin filename
     char binaryFilename[256];
-    strcpy(&binaryFilename[0], argv[argc-1]);
+    strcpy(&binaryFilename[0], infile);
     const char* pTemp = strstr(&binaryFilename[0], ".spin");
     if (pTemp == 0)
     {
-        printf("spinfile must have .spin extension. You passed in: %s", argv[argc-1]);
+        printf("ERROR: spinfile must have .spin extension. You passed in: %s", infile);
+        Usage();
         return 1;
     }
     else
@@ -67,7 +233,11 @@ int main(int argc, char* argv[])
         strcat(&binaryFilename[0], "binary");
     }
 
-    printf("Compileing %s...", argv[argc-1]);
+    if (!bQuiet)
+    {
+        Banner();
+        printf("Compileing %s...", argv[argc-1]);
+    }
 
     s_pCompilerData = InitStruct();
 
@@ -77,14 +247,15 @@ int main(int argc, char* argv[])
     s_pCompilerData->doc = new char[DocLimit];
     s_pCompilerData->doc_limit = DocLimit;
 
-    if (!CompileRecursively(argv[argc-1]))
+    if (!CompileRecursively(infile))
     {
-        printf("Failed.\n");
         return 1;
     }
 
-    printf("Done.\n");
-
+    if (!bQuiet)
+    {
+        printf("Done.\n");
+    }
 
     unsigned char* pBuffer = NULL;
     int bufferSize = 0;
@@ -97,24 +268,27 @@ int main(int argc, char* argv[])
     }
     delete [] pBuffer;
 
-    // do stuff with list and/or doc here
-    int listOffset = 0;
-    while (listOffset < s_pCompilerData->list_length)
+    if (bVerbose && !bQuiet)
     {
-        char* pTemp = strstr(&(s_pCompilerData->list[listOffset]), "\r");
-        if (pTemp)
+        // do stuff with list and/or doc here
+        int listOffset = 0;
+        while (listOffset < s_pCompilerData->list_length)
         {
-            *pTemp = 0;
-        }
-        printf("%s\n", &(s_pCompilerData->list[listOffset]));
-        if (pTemp)
-        {
-            *pTemp = 0x0D;
-            listOffset += pTemp - &(s_pCompilerData->list[listOffset]);
-        }
-        while (s_pCompilerData->list[listOffset] < 32 && listOffset < s_pCompilerData->list_length)
-        {
-            listOffset++;
+            char* pTemp = strstr(&(s_pCompilerData->list[listOffset]), "\r");
+            if (pTemp)
+            {
+                *pTemp = 0;
+            }
+            printf("%s\n", &(s_pCompilerData->list[listOffset]));
+            if (pTemp)
+            {
+                *pTemp = 0x0D;
+                listOffset += pTemp - &(s_pCompilerData->list[listOffset]);
+            }
+            while (s_pCompilerData->list[listOffset] < 32 && listOffset < s_pCompilerData->list_length)
+            {
+                listOffset++;
+            }
         }
     }
 
@@ -178,7 +352,7 @@ char* LoadFile(char* pFilename, int* pnLength)
 {
     char* pBuffer = 0;
 
-    FILE* pFile = fopen(pFilename, "rb");
+    FILE* pFile = OpenFileInPath(pFilename, "rb");
     if (pFile != NULL)
     {
         // get the length of the file by seeking to the end and using ftell
@@ -250,7 +424,7 @@ bool CompileSubObject(char* pFileName)
 int GetData(unsigned char* pDest, char* pFileName, int nMaxSize)
 {
     int nBytesRead = 0;
-    FILE* pFile = fopen(pFileName, "rb");
+    FILE* pFile = OpenFileInPath(pFileName, "rb");
 
     if (pFile)
     {
@@ -402,7 +576,7 @@ bool CompileRecursively(char* pFilename)
     s_nObjStackPtr++;
     if (s_nObjStackPtr > ObjFileStackLimit)
     {
-        printf("Object nesting exceeds limit of %d levels.\n", ObjFileStackLimit);
+        printf("%s : error : Object nesting exceeds limit of %d levels.\n", pFilename, ObjFileStackLimit);
         return false;
     }
 
@@ -410,7 +584,7 @@ bool CompileRecursively(char* pFilename)
 
     if (s_pCompilerData->source == NULL)
     {
-        printf("Can't find/open source file: %S \n", pFilename);
+        printf("%s : error : Can not find/open file.\n", pFilename);
         return false;
     }
 
@@ -418,18 +592,22 @@ bool CompileRecursively(char* pFilename)
     const char* pErrorString = Compile1();
     if (pErrorString != 0)
     {
-        printf("%s\n", pErrorString);
+        int lineNumber = 1;
+        int column = 1;
+        GetErrorInfo(lineNumber, column);
+        printf("%s(%d:%d) : error : %s\n", pFilename, lineNumber, column, pErrorString);
         return false;
     }
 
     if (s_pCompilerData->obj_files > 0)
     {
         char filenames[file_limit*256];
-        int	filename_start[file_limit];
-        int	filename_finish[file_limit];
-        int	instances[file_limit];
+        int filename_start[file_limit];
+        int filename_finish[file_limit];
+        int instances[file_limit];
         
-        for (int i = 0; i < s_pCompilerData->obj_files; i++)
+        int numObjects = s_pCompilerData->obj_files;
+        for (int i = 0; i < numObjects; i++)
         {
             // copy the obj filename appending .spin if it doesn't have it.
             strcpy(&filenames[i<<8], &(s_pCompilerData->obj_filenames[i<<8]));
@@ -442,7 +620,7 @@ bool CompileRecursively(char* pFilename)
             instances[i] = s_pCompilerData->obj_instances[i];
         }
 
-        for (int i = 0; i < s_pCompilerData->obj_files; i++)
+        for (int i = 0; i < numObjects; i++)
         {
             if (!CompileSubObject(&filenames[i<<8]))
             {
@@ -455,7 +633,10 @@ bool CompileRecursively(char* pFilename)
         pErrorString = Compile1();
         if (pErrorString != 0)
         {
-            printf("%s\n", pErrorString);
+            int lineNumber = 1;
+            int column = 1;
+            GetErrorInfo(lineNumber, column);
+            printf("%s(%d:%d) : error : %s\n", pFilename, lineNumber, column, pErrorString);
             return false;
         }
 
@@ -466,7 +647,7 @@ bool CompileRecursively(char* pFilename)
             int nObjIdx = IndexOfObjectInHeap(&filenames[i<<8]);
             if (p + s_ObjHeap[nObjIdx].ObjSize > data_limit)
             {
-                printf("Object files exceed 64k.\n");
+                printf("%s : error : Object files exceed 64k.\n", pFilename);
                 return false;
             }
             memcpy(&s_pCompilerData->obj_data[p], s_ObjHeap[nObjIdx].Obj, s_ObjHeap[nObjIdx].ObjSize);
@@ -482,21 +663,13 @@ bool CompileRecursively(char* pFilename)
         int p = 0;
         for (int i = 0; i < s_pCompilerData->dat_files; i++)
         {
-            // {Get DAT's Files}
+            // Get DAT's Files
 
-            //{Get name information}
+            // Get name information
             char filename[256];
             strcpy(&filename[0], &(s_pCompilerData->dat_filenames[i<<8]));
 
-            s_pCompilerData->source_start = s_pCompilerData->dat_name_start[i]+1;
-            s_pCompilerData->source_finish = s_pCompilerData->dat_name_finish[i]-1;
-            
-            //{Find file}
-            //if (!LocateSource(pFilename, ObjLevel))
-            //{
-            //	printf("Cannot find data file %s in work folder or library folder. %s", pFilename, GetSearchPaths);
-            //}
-            //{Load file}
+            // Load file and add to dat_data buffer
             s_pCompilerData->dat_lengths[i] = GetData(&(s_pCompilerData->dat_data[p]), &filename[0], data_limit - p);
             if (s_pCompilerData->dat_lengths[i] == -1)
             {
@@ -505,7 +678,7 @@ bool CompileRecursively(char* pFilename)
             }
             if (p + s_pCompilerData->dat_lengths[i] > data_limit)
             {
-                printf("Object files exceed 64k.\n");
+                printf("%s : error : Object files exceed 64k.\n", pFilename);
                 return false;
             }
             s_pCompilerData->dat_offsets[i] = p;
@@ -517,7 +690,10 @@ bool CompileRecursively(char* pFilename)
     pErrorString = Compile2();
     if (pErrorString != 0)
     {
-        printf("%s\n", pErrorString);
+        int lineNumber = 1;
+        int column = 1;
+        GetErrorInfo(lineNumber, column);
+        printf("%s(%d:%d) : error : %s\n", pFilename, lineNumber, column, pErrorString);
         return false;
     }
 
@@ -525,13 +701,13 @@ bool CompileRecursively(char* pFilename)
     int i = 0x10 + *((short*)&s_pCompilerData->obj[0]) + *((short*)&s_pCompilerData->obj[2]) + (s_pCompilerData->stack_requirement << 2);
     if (!s_pCompilerData->compile_mode && (i > 0x8000))
     {
-        printf("Object exceeds runtime memory limit by %d longs.\n", (i - 0x8000) >> 2);
+        printf("%s : error : Object exceeds runtime memory limit by %d longs.\n", pFilename, (i - 0x8000) >> 2);
         return false;
     }
 
     if (!AddObjectToHeap(pFilename))
     {
-        printf("Object Heap Overflow.\n");
+        printf("%s : error : Object Heap Overflow.\n", pFilename);
         return false;
     }
     s_nObjStackPtr--;

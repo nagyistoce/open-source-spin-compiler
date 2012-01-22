@@ -93,7 +93,7 @@ bool StringConstant_PostProcess()
         {
             int temp = g_pCompilerData->obj_ptr;
             temp += g_pCompilerData->str_offset[strIndex];
-            temp |= 0x80FF;
+            temp |= 0x8000;
             short strAddress = ((temp & 0xFF00) >> 8) | ((temp & 0x00FF) << 8);  // xchg ah,al
             *((short*)&(g_pCompilerData->obj[g_pCompilerData->str_patch[strIndex]])) = strAddress;
             strIndex++;

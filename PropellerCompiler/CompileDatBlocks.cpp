@@ -729,6 +729,7 @@ bool CompileDatBlocks()
         g_pCompilerData->obj_ptr = ptr;
         g_pCompilerData->asm_local = 0;
         g_pCompilerData->cog_org = 0;
+        g_pCompilerData->orgx = 0;
         int size = 0;
 
         bool bEof = false;

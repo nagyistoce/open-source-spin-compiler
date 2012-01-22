@@ -22,27 +22,37 @@
 // set elementizer data from the currently set symbol entry
 void Elementizer::SetFromSymbolEntry()
 {
-    m_type = m_pSymbolEntry->m_data.type;
-    m_value = m_pSymbolEntry->m_data.value;
-    if (m_pSymbolEntry->m_data.dual)
+    if (m_pSymbolEntry)
     {
-        m_dual = true;
-        m_asm = m_pSymbolEntry->m_data.operator_type_or_asm;
+        m_type = m_pSymbolEntry->m_data.type;
+        m_value = m_pSymbolEntry->m_data.value;
+        if (m_pSymbolEntry->m_data.dual)
+        {
+            m_dual = true;
+            m_asm = m_pSymbolEntry->m_data.operator_type_or_asm;
+        }
+        else
+        {
+            m_dual = false;
+            m_opType = m_pSymbolEntry->m_data.operator_type_or_asm;
+
+            // fixup for AND and OR to have asm also
+            if (m_type == type_binary && m_opType == op_log_and)
+            {
+                m_asm = 0x18 + 0x40;
+            }
+            if (m_type == type_binary && m_opType == op_log_or)
+            {
+                m_asm = 0x1A + 0x40;
+            }
+        }
     }
     else
     {
-        m_dual = false;
-        m_opType = m_pSymbolEntry->m_data.operator_type_or_asm;
-
-        // fixup for AND and OR to have asm also
-        if (m_type == type_binary && m_opType == op_log_and)
-        {
-            m_asm = 0x18 + 0x40;
-        }
-        if (m_type == type_binary && m_opType == op_log_or)
-        {
-            m_asm = 0x1A + 0x40;
-        }
+        m_type = 0;
+        m_value = 0;
+        m_asm = -1;
+        m_opType = -1;
     }
 }
 
@@ -615,6 +625,23 @@ int Elementizer::GetColumn()
     return column + 1;
 }
 
+int Elementizer::GetCurrentLineNumber()
+{
+    int lineCount = 1;
+
+    char* pSource = m_pCompilerData->source;
+    int scanEnd = m_pCompilerData->source_start;
+    while (scanEnd > 0)
+    {
+        if (pSource[--scanEnd] == 13)
+        {
+            lineCount++;
+        }
+    }
+
+    return lineCount;
+}
+
 // backup to the previous element
 void Elementizer::Backup()
 {
@@ -694,15 +721,7 @@ bool Elementizer::NegConToCon()
 bool Elementizer::FindSymbol(const char* symbol)
 {
     m_pSymbolEntry = m_pSymbolEngine->FindSymbol(symbol);
-    if (m_pSymbolEntry == 0)
-    {
-        return false;
-    }
-    else
-    {
-        SetFromSymbolEntry();
-    }
-
+    SetFromSymbolEntry();
     return true;
 }
 
