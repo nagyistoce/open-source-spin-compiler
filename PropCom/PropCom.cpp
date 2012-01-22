@@ -537,19 +537,58 @@ void UnicodeToPASCII(char* pBuffer, int nBufferLength, char* pPASCIIBuffer)
 /*7E0*/ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
     };
 
-    int nSourceOffset = 0;
-    int nDestOffset = 0;
-    while (nSourceOffset < nBufferLength)
+    bool bUnicode = false;
+    // detect Unicode or ASCII form
+    if (*((short*)(&pBuffer[0])) == -257) // -257 == 0xFEFF
     {
-        short nChar = *((short*)(&pBuffer[nSourceOffset]));
-        if (nChar != 0x000A && nChar != -257) // -257 == 0xFEFF
-        {
-            pPASCIIBuffer[nDestOffset] = aCharTxMap[(nChar | ((nChar >> 5) & !(nChar >> 4) & 0x0100)) & 0x07FF];
-            nDestOffset++;
-        }
-        nSourceOffset += 2;
+        bUnicode = true;
     }
-    pPASCIIBuffer[nDestOffset] = 0;
+    else if (nBufferLength > 2 && pBuffer[1] == 0)
+    {
+        bUnicode = true;
+    }
+
+    if (bUnicode)
+    {
+        int nSourceOffset = 0;
+        int nDestOffset = 0;
+        while (nSourceOffset < nBufferLength)
+        {
+            short nChar = *((short*)(&pBuffer[nSourceOffset]));
+            if (nChar != 0x000A && nChar != -257) // -257 == 0xFEFF
+            {
+                pPASCIIBuffer[nDestOffset] = aCharTxMap[(nChar | ((nChar >> 5) & !(nChar >> 4) & 0x0100)) & 0x07FF];
+                nDestOffset++;
+            }
+            nSourceOffset += 2;
+        }
+        pPASCIIBuffer[nDestOffset] = 0;
+    }
+    else
+    {
+        // ascii, copy over translating line endings
+        int nSourceOffset = 0;
+        int nDestOffset = 0;
+        while (nSourceOffset < nBufferLength)
+        {
+            char nChar = pBuffer[nSourceOffset];
+            if (nChar != 0x0A)
+            {
+                pPASCIIBuffer[nDestOffset] = nChar;
+                nDestOffset++;
+            }
+            else
+            {
+                if (nSourceOffset == 0 || pBuffer[nSourceOffset-1] != 0x0D)
+                {
+                    pPASCIIBuffer[nDestOffset] = 0x0D;
+                    nDestOffset++;
+                }
+            }
+            nSourceOffset++;
+        }
+        //memcpy(pPASCIIBuffer, pBuffer, nBufferLength);
+    }
 }
 
 void GetPASCIISource(char* pFilename)
