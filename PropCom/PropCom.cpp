@@ -137,6 +137,7 @@ static void Usage(void)
     fprintf(stderr, "\
 usage: propeller-load\n\
          [ -I <path> ]     add a directory to the include path\n\
+         [ -c ]            output only DAT sections (not implemented yet)\n\
          [ -q ]            quiet mode (suppress banner and non-error text)\n\
          [ -v ]            verbose output\n\
          <name.spin>       spin file to compile\n\
@@ -222,7 +223,7 @@ int main(int argc, char* argv[])
     const char* pTemp = strstr(&binaryFilename[0], ".spin");
     if (pTemp == 0)
     {
-        printf("ERROR: spinfile must have .spin extension. You passed in: %s", infile);
+        printf("ERROR: spinfile must have .spin extension. You passed in: %s\n", infile);
         Usage();
         return 1;
     }
@@ -236,7 +237,7 @@ int main(int argc, char* argv[])
     if (!bQuiet)
     {
         Banner();
-        printf("Compileing %s...", argv[argc-1]);
+        printf("Compileing %s...\n", argv[argc-1]);
     }
 
     s_pCompilerData = InitStruct();
