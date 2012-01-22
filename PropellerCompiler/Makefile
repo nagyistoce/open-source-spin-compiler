@@ -4,22 +4,22 @@ CFLAGS+=-DGCC
 CXXFLAGS += $(CFLAGS)
 
 
-LIBNAME=libpropcomp.a
+LIBNAME=libspin.a
 SRCDIR=.
 OBJ=$(SRCDIR)/BlockNestStackRoutines.o \
-    $(SRCDIR)/CompileDatBlocks.o \
-    $(SRCDIR)/CompileExpression.o \
-    $(SRCDIR)/CompileInstruction.o \
-    $(SRCDIR)/CompileUtilities.o \
-    $(SRCDIR)/DistillObjects.o \
-    $(SRCDIR)/Elementizer.o \
-    $(SRCDIR)/ErrorStrings.o \
-    $(SRCDIR)/ExpressionResolver.o \
-    $(SRCDIR)/InstructionBlockCompiler.o \
-    $(SRCDIR)/StringConstantRoutines.o \
-    $(SRCDIR)/SymbolEngine.o \
-    $(SRCDIR)/Utilities.o \
-    $(SRCDIR)/PropellerCompiler.o \
+	$(SRCDIR)/CompileDatBlocks.o \
+	$(SRCDIR)/CompileExpression.o \
+	$(SRCDIR)/CompileInstruction.o \
+	$(SRCDIR)/CompileUtilities.o \
+	$(SRCDIR)/DistillObjects.o \
+	$(SRCDIR)/Elementizer.o \
+	$(SRCDIR)/ErrorStrings.o \
+	$(SRCDIR)/ExpressionResolver.o \
+	$(SRCDIR)/InstructionBlockCompiler.o \
+	$(SRCDIR)/StringConstantRoutines.o \
+	$(SRCDIR)/SymbolEngine.o \
+	$(SRCDIR)/Utilities.o \
+	$(SRCDIR)/PropellerCompiler.o \
 
 
 all: $(LIBNAME) Makefile

@@ -237,7 +237,7 @@ int main(int argc, char* argv[])
     if (!bQuiet)
     {
         Banner();
-        printf("Compileing %s...\n", argv[argc-1]);
+        printf("Compiling %s...\n", argv[argc-1]);
     }
 
     s_pCompilerData = InitStruct();
@@ -587,7 +587,7 @@ void UnicodeToPASCII(char* pBuffer, int nBufferLength, char* pPASCIIBuffer)
             }
             nSourceOffset++;
         }
-        //memcpy(pPASCIIBuffer, pBuffer, nBufferLength);
+        pPASCIIBuffer[nDestOffset] = 0;
     }
 }
 

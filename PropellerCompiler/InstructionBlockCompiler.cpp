@@ -324,11 +324,11 @@ bool CompileCase(int column, int param)
         if (g_pElementizer->GetType() == type_other)
         {
             bOther = true;
-            if (!g_pElementizer->GetNext(bEof)) // skip 'other'
+            if (!g_pElementizer->GetNext(bEof)) // get/skip 'other'
             {
                 return false;
             }
-            otherSourcePtr = g_pElementizer->GetSourcePtr();
+            otherSourcePtr = g_pCompilerData->source_start; // save the pointer to the beginning of 'other'
         }
         else
         {

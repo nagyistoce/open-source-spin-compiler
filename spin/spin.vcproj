@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="PropCom"
+	Name="spin"
 	ProjectGUID="{A52778A6-7ABC-4FC5-B238-A6337AB2CC1F}"
-	RootNamespace="PropComTest"
+	RootNamespace="spin"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -168,7 +168,7 @@
 	</References>
 	<Files>
 		<File
-			RelativePath=".\PropCom.cpp"
+			RelativePath=".\spin.cpp"
 			>
 		</File>
 	</Files>

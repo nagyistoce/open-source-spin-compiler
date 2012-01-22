@@ -3,13 +3,13 @@ CXX=g++
 CFLAGS+=-DGCC
 
 
-NAME=propcomp
-TARGET=PropCom
+NAME=spin
+TARGET=spin
 MAIN=$(TARGET)/$(TARGET)
 MAINOBJ=$(MAIN).o
 MAINSRC=$(MAIN).cpp
 LIBDIR=PropellerCompiler
-LIBNAME=$(LIBDIR)/libpropcomp.a
+LIBNAME=$(LIBDIR)/libspin.a
 
 
 all: $(LIBNAME) Makefile
