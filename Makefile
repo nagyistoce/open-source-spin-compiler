@@ -5,7 +5,7 @@ CFLAGS+=-DGCC
 
 NAME=spin
 TARGET=spin
-MAIN=$(TARGET)/$(TARGET)
+MAIN=SpinSource/$(TARGET)
 MAINOBJ=$(MAIN).o
 MAINSRC=$(MAIN).cpp
 LIBDIR=PropellerCompiler
