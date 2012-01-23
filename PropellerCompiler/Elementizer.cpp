@@ -111,7 +111,13 @@ bool Elementizer::GetNext(bool& bEof)
             char digitValue;
             if (!CheckDigit(currentChar, digitValue, (char)constantBase))
             {
-                if (constantBase == 10 && (currentChar == '.' || currentChar == 'e' || currentChar == 'E'))
+                char notUsed;
+                char nextChar = pSource[m_sourceOffset];
+                bool bNextCharDigit = CheckDigit(nextChar, notUsed, (char)constantBase);
+
+                if (constantBase == 10 && 
+                    (currentChar == '.' || currentChar == 'e' || currentChar == 'E') && 
+                    bNextCharDigit)
                 {
                     // handle float
                     m_sourceOffset = sourceStart;

@@ -441,7 +441,7 @@ bool CompileCase(int column, int param)
         }
         else
         {
-            // skip over range/values(s), alrleady compiled
+            // skip over range/values(s), allready compiled
             while (1)
             {
                 if (!SkipRange())
