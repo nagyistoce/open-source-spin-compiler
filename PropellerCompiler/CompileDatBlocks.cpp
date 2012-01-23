@@ -32,7 +32,7 @@ void CompileDatBlocks_EnterInfo(int datstart, int objstart)
 
 void CompileDatBlocks_EnterSymbol(bool bResSymbol, int size)
 {
-    int value = g_pCompilerData->obj_ptr & 0x0000FFFF | (g_pCompilerData->cog_org << 16);
+    int value = (g_pCompilerData->obj_ptr & 0x0000FFFF) | (g_pCompilerData->cog_org << 16);
     g_pCompilerData->inf_data0 = value;
     g_pCompilerData->inf_data1 = size;
     g_pCompilerData->inf_type = info_dat_symbol;
@@ -153,7 +153,7 @@ bool CompileDatBlocks_Data(bool& bEof, int pass, bool bSymbol, bool& bResSymbol,
         {
             return false;
         }
-        int	value = GetResult();
+        int value = GetResult();
 
         // get the count
         int count = 1;

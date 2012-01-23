@@ -151,7 +151,7 @@ int main(int argc, char* argv[])
     char* p = NULL;
     bool bVerbose = false;
     bool bQuiet = false;
-    bool bDATonly = false;
+    //bool bDATonly = false;
 
     // get the arguments
     for(int i = 1; i < argc; i++)
@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
                 break;
 
             case 'c':
-                bDATonly = true;
+                //bDATonly = true;
                 break;
 
             case 'q':
@@ -312,8 +312,6 @@ void ComposeRAM(unsigned char** ppBuffer, int& bufferSize)
   unsigned short pcurr = pbase + pubaddr;                                                       // Current program start = object base + public address (first public method)
   unsigned short dcurr = dbase + 4 + (s_pCompilerData->first_pub_parameters << 2) + publocs;    // current data stack pointer = data base + 4 + FirstParams*4 + publocs
 
-  //Result := vbase shr 2;                                                        {number of longs to be downloaded}
-
   // reset ram
   *ppBuffer = new unsigned char[vbase];
   memset(*ppBuffer, 0, vbase);
@@ -332,12 +330,6 @@ void ComposeRAM(unsigned char** ppBuffer, int& bufferSize)
 
   // set code
   memcpy(&((*ppBuffer)[pbase]), &(s_pCompilerData->obj[4]), codsize);
-
-//  {set initial call frame}  {This removed because it is now done by Propeller Chip (and on-the-fly by Propeller Tool only when necessary)}
-//  PWordArray(@Buffer[dbase - 8])[0] := $FFFF;     {pbase}   {See Info's constant declaration, InitCallFrame, for more information}
-//  PWordArray(@Buffer[dbase - 8])[1] := $FFF9;     {vbase}
-//  PWordArray(@Buffer[dbase - 8])[2] := $FFFF;     {dbase}
-//  PWordArray(@Buffer[dbase - 8])[3] := $FFF9;     {pcurr}
 
   // install ram checksum byte
   unsigned char sum = 0;
@@ -642,9 +634,9 @@ bool CompileRecursively(char* pFilename)
     if (s_pCompilerData->obj_files > 0)
     {
         char filenames[file_limit*256];
-        int filename_start[file_limit];
-        int filename_finish[file_limit];
-        int instances[file_limit];
+        //int filename_start[file_limit];
+        //int filename_finish[file_limit];
+        //int instances[file_limit];
         
         int numObjects = s_pCompilerData->obj_files;
         for (int i = 0; i < numObjects; i++)
@@ -655,9 +647,9 @@ bool CompileRecursively(char* pFilename)
             {
                 strcat(&filenames[i<<8], ".spin");
             }
-            filename_start[i] = s_pCompilerData->obj_name_start[i];
-            filename_finish[i] = s_pCompilerData->obj_name_finish[i];
-            instances[i] = s_pCompilerData->obj_instances[i];
+            //filename_start[i] = s_pCompilerData->obj_name_start[i];
+            //filename_finish[i] = s_pCompilerData->obj_name_finish[i];
+            //instances[i] = s_pCompilerData->obj_instances[i];
         }
 
         for (int i = 0; i < numObjects; i++)

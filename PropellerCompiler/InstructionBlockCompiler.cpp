@@ -57,7 +57,6 @@ bool CompileTopBlock()
 
 bool CompileBlock(int column)
 {
-    g_pElementizer->PushState();
     bool bEof = false;
 
     while (!bEof)
@@ -122,7 +121,6 @@ bool CompileBlock(int column)
         }
     }
     g_pElementizer->Backup();
-    g_pElementizer->PopState();
     return true;
 }
 
@@ -272,7 +270,7 @@ bool CompileBlock_IfOrIfNot(int column, int bIf)
 
 bool CompileCase(int column, int param)
 {
-    (param); // stop warning
+    param = param; // stop warning
 
     if (!BlockStack_CompileConstant())
     {
@@ -465,7 +463,7 @@ bool CompileCase(int column, int param)
             {
                 return false;
             }
-            if (!EnterObj(0x0C))	// casedone
+            if (!EnterObj(0x0C))    // casedone
             {
                 return false;
             }
@@ -492,7 +490,7 @@ bool CompileBlock_Case(int column)
 static bool s_bHasPost = false;
 bool CompileRepeatPlain(int column, int param)
 {
-    (param); // stop warning
+    param = param; // stop warning
 
     BlockStack_Write(2, g_pCompilerData->obj_ptr); // set revearse address
     if (!s_bHasPost)
@@ -519,8 +517,9 @@ bool CompileRepeatPlain(int column, int param)
         else
         {
             // check for post while or until
-            if ((g_pElementizer->GetType() == type_while) ||
-                (g_pElementizer->GetType() == type_until))
+            int postType = g_pElementizer->GetType();
+            if ((postType == type_while) ||
+                (postType == type_until))
             {
                 s_bHasPost = true;
                 BlockStack_Write(0, g_pCompilerData->obj_ptr); // set post-while/until 'next' address
@@ -532,7 +531,7 @@ bool CompileRepeatPlain(int column, int param)
                 {
                     return false;
                 }
-                byteCode = (g_pElementizer->GetType() == type_while) ? 0x0B : 0x0A;
+                byteCode = (postType == type_while) ? 0x0B : 0x0A;
             }
             else
             {
@@ -590,7 +589,7 @@ bool CompileRepeatPreWhileOrUntil(int column, int param)
 
 bool CompileRepeatCount(int column, int param)
 {
-    (param); // stop warning
+    param = param; // stop warning
 
     if (!CompileExpression()) // compile count expression
     {
@@ -628,7 +627,7 @@ bool CompileRepeatCount(int column, int param)
 
 bool CompileRepeatVariable(int column, int param)
 {
-    (param); // stop warning
+    param = param; // stop warning
 
     unsigned char varType = 0;
     unsigned char varSize = 0;

@@ -42,14 +42,6 @@ class Elementizer
 
     void SetFromSymbolEntry();
 
-    // used by PushState()/PopState()
-    int                     m_stateStackPtr;
-    int                     m_savedType[state_stack_limit];
-    int                     m_savedValue[state_stack_limit];
-    int                     m_savedOpType[state_stack_limit];
-    int                     m_savedAsm[state_stack_limit];
-    bool                    m_savedDual[state_stack_limit];
-
 public:
     Elementizer(CompilerDataInternal* pCompilerData, SymbolEngine* pSymbolEngine)
         : m_pCompilerData(pCompilerData)
@@ -57,7 +49,6 @@ public:
         , m_sourceOffset(0)
         , m_sourceFlags(0)
         , m_backIndex(0)
-        , m_stateStackPtr(0)
     {
         for(int i = 0; i < 4; i++)
         {
@@ -103,17 +94,6 @@ public:
     void    ObjConToCon();                      // convert type_objcon_xx to type_con_xx
     void    DatResToLong();                     // convert type_dat_long_res to type_dat_long
     bool    NegConToCon();                      // convert -constant to constant
-
-    bool    PushState();                        // push internal symbol state (use by CompileExpression)
-    void    PopState();                         // pop internal symbol state (use by CompileExpression)
-    void    SetValue(int value)                 // used by CompileSubExpression only
-    {
-        m_value = value; 
-    }
-    void    SetOpType(int opType)                 // used by CompileSubExpression only
-    {
-        m_opType = opType; 
-    }
 };
 
 #endif // _ELEMENTIZER_H_

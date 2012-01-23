@@ -51,15 +51,10 @@ bool CompileTopExpression();
 // Compile expression with sub-expressions
 bool CompileExpression()
 {
-    if (!g_pElementizer->PushState())
-    {
-        return false;
-    }
     if (!CompileTopExpression())
     {
         return false;
     }
-    g_pElementizer->PopState();
     return true;
 }
 
@@ -90,6 +85,8 @@ bool CompileSubExpression_Term()
     }
     g_pElementizer->SubToNeg();
 
+    int opType = g_pElementizer->GetOpType();
+
     switch (g_pElementizer->GetType())
     {
         case type_atat:
@@ -112,7 +109,7 @@ bool CompileSubExpression_Term()
             {
                 return false;
             }
-            if (!EnterObj((unsigned char)g_pElementizer->GetOpType() | 0xE0)) // math
+            if (!EnterObj((unsigned char)opType | 0xE0)) // math
             {
                 return false;
             }
@@ -141,9 +138,6 @@ bool CompileSubExpression_Term()
 
 bool CompileSubExpression(int precedence)
 {
-    int savedValue = g_pElementizer->GetValue();
-    int savedOpType = g_pElementizer->GetOpType();
-
     precedence--;
     if (precedence < 0)
     {
@@ -151,8 +145,6 @@ bool CompileSubExpression(int precedence)
         {
             return false;
         }
-        g_pElementizer->SetValue(savedValue);
-        g_pElementizer->SetOpType(savedOpType);
         return true;
     }
     else
@@ -192,8 +184,6 @@ bool CompileSubExpression(int precedence)
         }
     }
 
-    g_pElementizer->SetValue(savedValue);
-    g_pElementizer->SetOpType(savedOpType);
     return true;
 }
 
@@ -342,8 +332,10 @@ bool CompileTerm_ObjPub(unsigned char anchor, int value)
         return false;
     }
 
+    int objPubValue = g_pElementizer->GetValue();
+
     // compile any paramaters the pub has
-    if (!CompileParameters((g_pElementizer->GetValue() & 0x0000FF00) >> 8))
+    if (!CompileParameters((objPubValue & 0x0000FF00) >> 8))
     {
         return false;
     }
@@ -366,7 +358,7 @@ bool CompileTerm_ObjPub(unsigned char anchor, int value)
     {
         return false;
     }
-    return EnterObj((unsigned char)(g_pElementizer->GetValue() & 0xFF)); // index of objpub
+    return EnterObj((unsigned char)(objPubValue & 0xFF)); // index of objpub
 }
 
 // compile obj[].pub\obj[]#con
@@ -409,8 +401,7 @@ bool CompileTerm_Try(unsigned char anchor)
 
 bool CompileLook(int column, int param)
 {
-    // stop warning
-    (column);
+    column = column; // stop warning
 
     param &= 0xFF; // we only care about the bottom byte
 

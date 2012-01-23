@@ -1,6 +1,6 @@
 CC=gcc
 CXX=g++
-CFLAGS+=-DGCC
+CFLAGS+=-DGCC -Wall
 CXXFLAGS += $(CFLAGS)
 
 

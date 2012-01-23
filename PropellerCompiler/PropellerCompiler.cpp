@@ -1160,9 +1160,8 @@ bool CompileSubBlocks_Compile(int blockType, int &subCount)
                     {
                         return false;
                     }
-                    if (g_pElementizer->GetType() != type_undefined && 
-                        g_pElementizer->GetType() != type_loc_long ||										// this allows for 'RESULT'
-                        (g_pElementizer->GetType() == type_loc_long && g_pElementizer->GetValue() != 0))	// ''
+                    if ((g_pElementizer->GetType() != type_undefined && g_pElementizer->GetType() != type_loc_long) ||  // this allows for 'RESULT'
+                        (g_pElementizer->GetType() == type_loc_long && g_pElementizer->GetValue() != 0))                // ''
                     {
                         // result name was not unique
                         g_pCompilerData->error = true;

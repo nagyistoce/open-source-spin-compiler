@@ -669,7 +669,7 @@ bool PerformOp()
             break;
 
         case op_not:
-            result = !value1;
+            result = ~value1;
             break;
 
         case op_and:

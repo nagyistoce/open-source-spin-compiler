@@ -63,7 +63,6 @@ void Elementizer::Reset()
 {
     m_sourceOffset = 0;
     m_sourceFlags = 0;
-    m_stateStackPtr = 0;
 }
 
 // get the next element in source, returns true no error, bEof will be set to true if eof is hit
@@ -680,11 +679,7 @@ bool Elementizer::NegConToCon()
 {
     if (m_type == type_binary && m_opType == op_sub)
     {
-        if (!PushState())
-        {
-            return false;
-        }
-        
+        int savedValue = m_value;
         bool bEof = false;
         if (!GetNext(bEof))
         {
@@ -692,26 +687,19 @@ bool Elementizer::NegConToCon()
         }
         if (m_type == type_con)
         {
-            int savedValue = m_value;
-            PopState();
-            m_type = type_con;
-            m_asm = -1;
-            m_opType = -1;
-            m_value = -savedValue;
+            m_value = -m_value;
         }
         else if (m_type == type_con_float)
         {
-            int savedValue = m_value;
-            PopState();
-            m_type = type_con_float;
-            m_asm = -1;
-            m_opType = -1;
-            m_value = savedValue | 0x80000000;
+            m_value |= 0x80000000;
         }
         else
         {
             Backup();
-            PopState();
+            m_type = type_binary;
+            m_asm = -1;
+            m_opType = op_sub;
+            m_value = savedValue;
         }
     }
     return true;
@@ -728,40 +716,6 @@ bool Elementizer::FindSymbol(const char* symbol)
 void Elementizer::BackupSymbol()
 {
     strcpy(m_pCompilerData->symbolBackup, m_currentSymbol);
-}
-
-bool Elementizer::PushState()
-{
-    if (m_stateStackPtr < state_stack_limit)
-    {
-        m_savedType[m_stateStackPtr] = m_type;
-        m_savedValue[m_stateStackPtr] = m_value;
-        m_savedOpType[m_stateStackPtr] = m_opType;
-        m_savedAsm[m_stateStackPtr] = m_asm;
-        m_savedDual[m_stateStackPtr] = m_dual;
-        m_stateStackPtr++;
-    }
-    else
-    {
-        g_pCompilerData->error = true;
-        m_pCompilerData->error_msg = g_pErrorStrings[error_internal];
-        return false;
-    }
-    return true;
-}
-
-// this does nothing if there are not pushed states
-void Elementizer::PopState()
-{
-    if (m_stateStackPtr > 0)
-    {
-        m_stateStackPtr--;
-        m_type = m_savedType[m_stateStackPtr];
-        m_value = m_savedValue[m_stateStackPtr];
-        m_opType = m_savedOpType[m_stateStackPtr];
-        m_asm = m_savedAsm[m_stateStackPtr];
-        m_dual = m_savedDual[m_stateStackPtr];
-    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////

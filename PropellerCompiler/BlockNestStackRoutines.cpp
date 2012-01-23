@@ -105,7 +105,7 @@ bool BlockStack_CompileConstant()
     else
     {
         // one byte
-        if (!EnterObj(0x38)) // 0x39 = 00111000b
+        if (!EnterObj(0x38)) // 0x38 = 00111000b
         {
             return false;
         }
