@@ -134,7 +134,7 @@ static void Usage(void)
 {
     Banner();
     fprintf(stderr, "\
-usage: propeller-load\n\
+usage: spin\n\
          [ -I <path> ]     add a directory to the include path\n\
          [ -c ]            output only DAT sections (not implemented yet)\n\
          [ -d ]            dump out doc mode\n\
