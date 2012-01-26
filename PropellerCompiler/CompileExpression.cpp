@@ -78,7 +78,7 @@ bool CompileSubExpression_Term()
             return false;
         }
     } while (g_pElementizer->GetType() == type_binary && g_pElementizer->GetOpType() == op_add);
-    
+
     if (!g_pElementizer->NegConToCon())
     {
         return false;

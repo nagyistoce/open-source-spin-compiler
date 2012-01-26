@@ -97,7 +97,7 @@ bool Elementizer::GetNext(bool& bEof)
     {
         char currentChar = pSource[m_sourceOffset++];
 
-        // parse 
+        // parse
         if (constantBase > 0)
         {
             // this handles reading in a constant of base 2, 4, 10, or 16
@@ -115,8 +115,8 @@ bool Elementizer::GetNext(bool& bEof)
                 char nextChar = pSource[m_sourceOffset];
                 bool bNextCharDigit = CheckDigit(nextChar, notUsed, (char)constantBase);
 
-                if (constantBase == 10 && 
-                    (currentChar == '.' || currentChar == 'e' || currentChar == 'E') && 
+                if (constantBase == 10 &&
+                    (currentChar == '.' || currentChar == 'e' || currentChar == 'E') &&
                     bNextCharDigit)
                 {
                     // handle float
@@ -152,7 +152,7 @@ bool Elementizer::GetNext(bool& bEof)
         {
             // old string? (continue parsing a string)
 
-            // for strings, m_sourceFlags will start out 0, and then cycle between 1 and 2 for 
+            // for strings, m_sourceFlags will start out 0, and then cycle between 1 and 2 for
             // each character of the string, when it is 1, a type_comma is returned, when it is
             // 2 the next character is returned
 
@@ -164,7 +164,7 @@ bool Elementizer::GetNext(bool& bEof)
                 m_type = type_comma;
                 break;
             }
-            
+
             // reset flag
             m_sourceFlags = 0;
 
@@ -233,7 +233,7 @@ bool Elementizer::GetNext(bool& bEof)
             // return the character in value
             m_value = currentChar;
 
-            // check the next character, it's it's not a " then setup so the next 
+            // check the next character, it's it's not a " then setup so the next
             // call returns a type_comma, if it is a " then it means it's a one character
             // string and we leave the offset pointing after the "
             currentChar = pSource[m_sourceOffset++];
@@ -276,6 +276,7 @@ bool Elementizer::GetNext(bool& bEof)
             {
                 m_sourceOffset++; // skip over second '
                 bDocComment = true;
+                g_pCompilerData->doc_flag = true;
             }
             while(1)
             {
@@ -287,14 +288,14 @@ bool Elementizer::GetNext(bool& bEof)
                     bEof = true;
                     break;
                 }
-                else if (currentChar == 13)
+                if (bDocComment)
+                {
+                    DocPrint(currentChar);
+                }
+                if (currentChar == 13)
                 {
                     m_type = type_end;
                     break;
-                }
-                else if (bDocComment)
-                {
-                    DocPrint(currentChar);
                 }
             }
             break;
@@ -308,6 +309,11 @@ bool Elementizer::GetNext(bool& bEof)
             {
                 m_sourceOffset++; // skip over second {
                 bDocComment = true;
+                g_pCompilerData->doc_flag = true;
+                if (pSource[m_sourceOffset] == 13)
+                {
+                    m_sourceOffset++; // skip over end if present
+                }
             }
             while(1)
             {
@@ -324,28 +330,26 @@ bool Elementizer::GetNext(bool& bEof)
                     }
                     m_sourceOffset--; // back up from eof
                     sourceStart = m_sourceOffset;
-                    //m_sourceOffset = 0;
                     break;
                 }
-                else if (currentChar == 13)
-                {
-                    // skip eol's
-                }
-                else if (currentChar == '{')
+                else if (!bDocComment && currentChar == '{')
                 {
                     braceCommentLevel++;
                 }
                 else if (currentChar == '}')
                 {
-                    braceCommentLevel--;
                     if (bDocComment && pSource[m_sourceOffset] == '}')
                     {
                         m_sourceOffset++; // skip over second }
                         break;
                     }
-                    else if (braceCommentLevel < 1)
+                    else if (!bDocComment)
                     {
-                        break;
+                        braceCommentLevel--;
+                        if (braceCommentLevel < 1)
+                        {
+                            break;
+                        }
                     }
                 }
                 else if (bDocComment)
@@ -564,7 +568,7 @@ bool Elementizer::CheckElement(int type)
 bool Elementizer::GetNextBlock(int type, bool& bEof)
 {
     bool bFound = false;
-    while(bFound == false) 
+    while(bFound == false)
     {
         if (GetNext(bEof) == false || bEof == true)
         {
@@ -710,7 +714,6 @@ bool Elementizer::NegConToCon()
     }
     return true;
 }
-
 
 bool Elementizer::FindSymbol(const char* symbol)
 {

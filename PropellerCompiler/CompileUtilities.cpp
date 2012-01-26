@@ -236,7 +236,7 @@ bool CheckVariable(bool& bVariable, unsigned char& type, unsigned char& size, in
                 return false;
             }
             size = (g_pElementizer->GetValue() & 0xFF); // update size
-            
+
             bool bIndex = false;
             if (!CheckIndex(bIndex, indexSourcePtr))
             {
@@ -510,7 +510,7 @@ bool CompileConstant(int value)
             {
                 return false;
             }
-            if (!EnterObj(i)) 
+            if (!EnterObj(i))
             {
                 return false;
             }
@@ -560,7 +560,7 @@ bool CompileConstant(int value)
         }
         return true;
     }
-    
+
     // 1 to 4 byte constant
     unsigned char size = 1;
     if (value & 0xFF000000)

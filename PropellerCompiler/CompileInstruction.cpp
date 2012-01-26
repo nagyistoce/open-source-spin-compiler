@@ -31,7 +31,7 @@ extern bool CompileTerm_Inst(int value);
 bool CompileInst_NextQuit(int value)
 {
     int blockNestPtr = g_pCompilerData->bnest_ptr;
-    
+
     unsigned char byteCode = 0;
     int caseDepth = 0;
 
@@ -341,7 +341,7 @@ bool CompileInstruction()
             return CompileVariable_Assign(0x18, varType, varSize, varAddress, varIndexSourcePtr);
         case type_tiltil: // assign post-set
             return CompileVariable_Assign(0x1C, varType, varSize, varAddress, varIndexSourcePtr);
-        case type_assign: 
+        case type_assign:
             return CompileInst_Assign(0x1C, varType, varSize, varAddress, varIndexSourcePtr);
     }
 

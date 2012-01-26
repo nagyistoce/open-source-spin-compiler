@@ -123,7 +123,6 @@ FILE* OpenFileInPath(const char *name, const char *mode)
     return file;
 }
 
-
 static void Banner(void)
 {
     fprintf(stdout, "Propeller Spin/PASM Compiler (c)2012 Parallax Inc. DBA Parallax Semiconductor.\n");
@@ -138,11 +137,11 @@ static void Usage(void)
 usage: propeller-load\n\
          [ -I <path> ]     add a directory to the include path\n\
          [ -c ]            output only DAT sections (not implemented yet)\n\
+         [ -d ]            dump out doc mode\n\
          [ -q ]            quiet mode (suppress banner and non-error text)\n\
          [ -v ]            verbose output\n\
          <name.spin>       spin file to compile\n\
 \n");
-    exit(1);
 }
 
 int main(int argc, char* argv[])
@@ -151,15 +150,16 @@ int main(int argc, char* argv[])
     char* p = NULL;
     bool bVerbose = false;
     bool bQuiet = false;
+    bool bDocMode = false;
     //bool bDATonly = false;
 
     // get the arguments
     for(int i = 1; i < argc; i++)
     {
         // handle switches
-        if(argv[i][0] == '-') 
+        if(argv[i][0] == '-')
         {
-            switch(argv[i][1]) 
+            switch(argv[i][1])
             {
             case 'I':
                 if(argv[i][2])
@@ -180,6 +180,10 @@ int main(int argc, char* argv[])
 
             case 'c':
                 //bDATonly = true;
+                break;
+
+            case 'd':
+                bDocMode = true;
                 break;
 
             case 'q':
@@ -237,7 +241,7 @@ int main(int argc, char* argv[])
     if (!bQuiet)
     {
         Banner();
-        printf("Compiling %s...\n", argv[argc-1]);
+        printf("Compiling %s...\n", infile);
     }
 
     s_pCompilerData = InitStruct();
@@ -247,6 +251,15 @@ int main(int argc, char* argv[])
     memset(s_pCompilerData->list, 0, ListLimit);
     s_pCompilerData->doc = new char[DocLimit];
     s_pCompilerData->doc_limit = DocLimit;
+    memset(s_pCompilerData->doc, 0, DocLimit);
+
+    // copy filename into obj_title, and chop off the .spin
+    strcpy(s_pCompilerData->obj_title, infile);
+    char* pExtension = strstr(&s_pCompilerData->obj_title[0], ".spin");
+    if (pExtension != 0)
+    {
+        *pExtension = 0;
+    }
 
     if (!CompileRecursively(infile))
     {
@@ -284,11 +297,35 @@ int main(int argc, char* argv[])
             if (pTemp)
             {
                 *pTemp = 0x0D;
-                listOffset += pTemp - &(s_pCompilerData->list[listOffset]);
+                listOffset += (pTemp - &(s_pCompilerData->list[listOffset])) + 1;
             }
-            while (s_pCompilerData->list[listOffset] < 32 && listOffset < s_pCompilerData->list_length)
+            else
             {
-                listOffset++;
+                listOffset += strlen(&(s_pCompilerData->list[listOffset]));
+            }
+        }
+    }
+
+    if (bDocMode && !bQuiet)
+    {
+        // do stuff with list and/or doc here
+        int docOffset = 0;
+        while (docOffset < s_pCompilerData->doc_length)
+        {
+            char* pTemp = strstr(&(s_pCompilerData->doc[docOffset]), "\r");
+            if (pTemp)
+            {
+                *pTemp = 0;
+            }
+            printf("%s\n", &(s_pCompilerData->doc[docOffset]));
+            if (pTemp)
+            {
+                *pTemp = 0x0D;
+                docOffset += (pTemp - &(s_pCompilerData->doc[docOffset])) + 1;
+            }
+            else
+            {
+                docOffset += strlen(&(s_pCompilerData->doc[docOffset]));
             }
         }
     }
@@ -637,7 +674,7 @@ bool CompileRecursively(char* pFilename)
         //int filename_start[file_limit];
         //int filename_finish[file_limit];
         //int instances[file_limit];
-        
+
         int numObjects = s_pCompilerData->obj_files;
         for (int i = 0; i < numObjects; i++)
         {

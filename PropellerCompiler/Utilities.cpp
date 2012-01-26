@@ -51,7 +51,7 @@ bool PrintString(const char* theString)
         result = PrintChr(theChar);
         theChar = theString[stringOffset++];
     }
-    
+
     return result;
 }
 
@@ -276,7 +276,7 @@ bool GetFloat(char* pSource, int& sourceOffset, int& value)
 {
     // copy stuff to a temp buffer, stripping _'s and going until an invalid float char
     // this also stops if we hit a second ., a second E, or get a sign without and E before it
-    // 
+    //
     char temp[128];
     int tempOffset = 0;
     bool bGotDot = false;
@@ -405,7 +405,6 @@ bool GetObjSymbol(int type, char id)
 
     return false;
 }
-
 
 bool GetCommaOrEnd(bool& bComma)
 {
@@ -723,9 +722,9 @@ bool HandleConSymbol(int pass)
 
     // save a copy of the symbol
     g_pElementizer->BackupSymbol();
-    
+
     bool bFloat = false;
-    
+
     bool bEof = false;
     g_pElementizer->GetNext(bEof);
     if (g_pElementizer->GetType() == type_equal)
@@ -789,17 +788,17 @@ bool HandleConSymbol(int pass)
     return true;
 }
 
-#define WORD_LENGTH (8 * sizeof(value)) 
-int rol(unsigned int value, int places) 
+#define WORD_LENGTH (8 * sizeof(value))
+int rol(unsigned int value, int places)
 {
-    return (value << places) | (value >> (WORD_LENGTH - places)); 
+    return (value << places) | (value >> (WORD_LENGTH - places));
 }
 
-int ror(unsigned int value, int places) 
+int ror(unsigned int value, int places)
 {
     return (value >> places) | (value << (WORD_LENGTH - places));
 }
-#undef WORD_LENGTH 
+#undef WORD_LENGTH
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //                           TERMS OF USE: MIT License                                   //

@@ -34,7 +34,7 @@ struct CompilerDataInternal : public CompilerData
 
     char            symbolBackup[symbol_limit+2];   // used when entering a symbol into the symbol table
 
-    int             doc_flag;
+    bool            doc_flag;
     bool            doc_mode;
 
     int             cog_org;

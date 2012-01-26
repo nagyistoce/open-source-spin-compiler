@@ -79,7 +79,7 @@ bool CompileBlock(int column)
         {
             break;
         }
-        
+
         if (g_pElementizer->GetType() == type_if)
         {
             if (!CompileBlock_IfOrIfNot(s_column, true))
@@ -367,7 +367,7 @@ bool CompileCase(int column, int param)
             return false;
         }
     }
-    
+
     if (caseCount == 0)
     {
         g_pCompilerData->error = true;

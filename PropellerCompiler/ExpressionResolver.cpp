@@ -154,7 +154,7 @@ void ResolveSubExpression(int precedence)
 void GetTerm(int& precedence)
 {
     bool bEof = false;
-    
+
     // skip over any leading +'s
     do
     {
@@ -165,7 +165,7 @@ void GetTerm(int& precedence)
         }
         break;
     } while (!bEof);
-    
+
     bool bConstant = false;
     if (!CheckConstant(bConstant))
     {
@@ -262,8 +262,8 @@ bool CheckDat()
     {
         g_pElementizer->DatResToLong();
     }
-    if ((g_pElementizer->GetType() == type_dat_byte) || 
-        (g_pElementizer->GetType() == type_dat_word) || 
+    if ((g_pElementizer->GetType() == type_dat_byte) ||
+        (g_pElementizer->GetType() == type_dat_word) ||
         (g_pElementizer->GetType() == type_dat_long))
     {
         return true;

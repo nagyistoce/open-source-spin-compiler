@@ -49,8 +49,8 @@ extern bool CompileTopBlock(); // in InstructionBlockCompiler.cpp
 
 // globals used by the compiler
 CompilerDataInternal* g_pCompilerData = 0;
-SymbolEngine* g_pSymbolEngine = 0;
-Elementizer* g_pElementizer = 0;
+SymbolEngine* g_pSymbolEngine         = 0;
+Elementizer* g_pElementizer           = 0;
 
 //////////////////////////////////////////
 // exported functions
@@ -60,7 +60,6 @@ Elementizer* g_pElementizer = 0;
 // the CompilerData pointer it returns is what Compile1() and Compile2() use/fill.
 CompilerData* InitStruct()
 {
-
     g_pCompilerData = new CompilerDataInternal;
     // wipe the compiler data struct with 0's
     memset(g_pCompilerData, 0, sizeof(CompilerDataInternal));
@@ -105,7 +104,7 @@ const char* Compile1()
     g_pCompilerData->pubcon_list_size = 0;
     g_pCompilerData->list_length = 0;
     g_pCompilerData->doc_length = 0;
-    g_pCompilerData->doc_mode = 0;
+    g_pCompilerData->doc_mode = false;
     g_pCompilerData->info_count = 0;
 
     // reset obj pointer based on compile_mode
@@ -322,7 +321,7 @@ bool CompileConBlocks(int pass)
 {
     bool bEof = false;
     g_pElementizer->Reset();
-    
+
     while (!bEof)
     {
         g_pCompilerData->enum_valid = 1;
@@ -459,7 +458,7 @@ bool CompileSubBlocksId_Compile(int blockType, bool &bFirst)
 
                 // save a copy of the symbol
                 g_pElementizer->BackupSymbol();
-                            
+
                 if (g_pCompilerData->obj_ptr < 256*4)
                 {
                     params = 0;
@@ -516,7 +515,7 @@ bool CompileSubBlocksId_Compile(int blockType, bool &bFirst)
                         {
                             return false;
                         }
-                        if (g_pElementizer->GetType() != type_undefined && 
+                        if (g_pElementizer->GetType() != type_undefined &&
                             g_pElementizer->GetType() != type_loc_long) // this allows for 'RESULT' (ignores it)
                         {
                             // result name was not unique
@@ -651,7 +650,6 @@ bool CompileSubBlocksId_Compile(int blockType, bool &bFirst)
 
 bool CompileSubBlocksId()
 {
-
     bool bFirst = false;
     if (!CompileSubBlocksId_Compile(block_pub, bFirst))
     {
@@ -698,7 +696,7 @@ bool CompileObjBlocksId()
                 {
                     // save a copy of the symbol
                     g_pElementizer->BackupSymbol();
-                                        
+
                     int instanceCount = 1;
 
                     // see if there is a count
@@ -805,7 +803,7 @@ bool CompileDatBlocksFileNames()
 
     bool bEof = false;
     g_pElementizer->Reset();
-    
+
     while (!bEof)
     {
         if(g_pElementizer->GetNextBlock(block_dat, bEof))
@@ -875,7 +873,7 @@ bool CompileObjSymbols()
     for (nFile = 0; nFile < g_pCompilerData->obj_files; nFile++)
     {
         unsigned char* pData = &(g_pCompilerData->obj_data[g_pCompilerData->obj_offsets[nFile]]);
-        
+
         // do checksum of obj
         unsigned char uChecksum = 0;
         for (int i = 0; i < g_pCompilerData->obj_lengths[nFile]; i++)
@@ -959,7 +957,7 @@ bool CompileVarBlocks()
 
     bool bEof = false;
     g_pElementizer->Reset();
-    
+
     while (!bEof)
     {
         if(g_pElementizer->GetNextBlock(block_var, bEof))
@@ -993,7 +991,7 @@ bool CompileVarBlocks()
 
                         // save a copy of the symbol
                         g_pElementizer->BackupSymbol();
-                        
+
                         int nCount = 1;
 
                         // see if there is a count
@@ -1021,15 +1019,15 @@ bool CompileVarBlocks()
                         int nValue = 0;
                         switch(nSize)
                         {
-                            case 0: 
+                            case 0:
                                 nValue = g_pCompilerData->var_byte;
-                                g_pCompilerData->var_byte += nCount; 
+                                g_pCompilerData->var_byte += nCount;
                                 break;
-                            case 1: 
+                            case 1:
                                 nValue = g_pCompilerData->var_word;
                                 g_pCompilerData->var_word += nCount<<1;
                                 break;
-                            case 2: 
+                            case 2:
                                 nValue = g_pCompilerData->var_long;
                                 g_pCompilerData->var_long += nCount<<2;
                                 break;
@@ -1620,7 +1618,7 @@ bool DetermineClock()
             return false;
         }
 
-        if (mode == 2) 
+        if (mode == 2)
         {
             // RCSLOW
             g_pCompilerData->clkmode = 1;
@@ -1691,8 +1689,259 @@ bool DetermineDebug()
     return true;
 }
 
+char CompileDoc_ScanSkip(int& scanPtr)
+{
+    while (g_pCompilerData->source[scanPtr] == ' ' || g_pCompilerData->source[scanPtr] == 9)
+    {
+        scanPtr++;
+    }
+
+    return g_pCompilerData->source[scanPtr];
+}
+
+bool CompileDoc_ScanInterface(bool bPrint, int& nCount)
+{
+    int savedSourcePtr = g_pElementizer->GetSourcePtr();
+
+    bool bEof = false;
+    if (!g_pElementizer->GetNext(bEof))
+    {
+        return false;
+    }
+
+    // start off count with the lenth of the pub name
+    nCount = g_pCompilerData->source_finish - g_pCompilerData->source_start;
+
+    if (bPrint)
+    {
+        // print the pub name
+        for (int i = 0; i < nCount; i++)
+        {
+            if (!PrintChr(g_pCompilerData->source[g_pCompilerData->source_start + i]))
+            {
+                return false;
+            }
+        }
+    }
+
+    // start right after name
+    int scanPtr = g_pCompilerData->source_start + nCount;
+
+    // scan/print any parameters
+    char currentChar = CompileDoc_ScanSkip(scanPtr);
+    if (currentChar == '(')
+    {
+        while (1)
+        {
+            currentChar = g_pCompilerData->source[scanPtr++];
+            nCount++;
+            if (bPrint)
+            {
+                if (!PrintChr(currentChar))
+                {
+                    return false;
+                }
+            }
+            if (currentChar == ')')
+            {
+                break;
+            }
+            else if (currentChar == ',')
+            {
+                // add a space after the comma
+                nCount++;
+                if (bPrint)
+                {
+                    if (!PrintChr(' '))
+                    {
+                        return false;
+                    }
+                }
+
+                // scan for first char of next param
+                CompileDoc_ScanSkip(scanPtr);
+            }
+        }
+    }
+
+    // scan/print any result
+    currentChar = CompileDoc_ScanSkip(scanPtr);
+    if (currentChar == ':')
+    {
+        nCount+=3;
+        if (bPrint)
+        {
+            if (!PrintString(" : "))
+            {
+                return false;
+            }
+        }
+
+        // scan/print chars until we get a non-word char (end of the result name)
+        currentChar = CompileDoc_ScanSkip(scanPtr);
+        while (CheckWordChar(currentChar))
+        {
+            nCount++;
+            if (bPrint)
+            {
+                if (!PrintChr(' '))
+                {
+                    return false;
+                }
+            }
+            currentChar = g_pCompilerData->source[scanPtr++];
+        }
+    }
+
+    // done with this interface
+    g_pElementizer->SetSourcePtr(savedSourcePtr);
+    nCount += 5; // account for 'PUB  ' &  the following cr
+    if (bPrint)
+    {
+        if (!PrintChr(13))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool CompileDoc_PrintAll(int sourcePtr)
+{
+    g_pElementizer->Reset();
+    g_pElementizer->SetSourcePtr(sourcePtr);
+
+    bool bEof = false;
+    while (!bEof)
+    {
+        if (!g_pElementizer->GetNextBlock(block_pub, bEof))
+        {
+            return false;
+        }
+        if (bEof)
+        {
+            break;
+        }
+        if (g_pCompilerData->doc_mode)
+        {
+            // print extra cr and underline
+            if (!PrintChr(13))
+            {
+                return false;
+            }
+            int nCount = 0;
+            if (!CompileDoc_ScanInterface(false, nCount))
+            {
+                return false;
+            }
+            for (int i = 0; i < nCount; i++)
+            {
+                if (!PrintChr('_'))
+                {
+                    return false;
+                }
+            }
+            if (!PrintChr(13))
+            {
+                return false;
+            }
+        }
+
+        // print pub name and interface
+        if (!PrintString("PUB  "))
+        {
+            return false;
+        }
+        int nCount = 0;
+        if (!CompileDoc_ScanInterface(true, nCount))
+        {
+            return false;
+        }
+        if (g_pCompilerData->doc_mode)
+        {
+            // print extra cr
+            if (!PrintChr(13))
+            {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 bool CompileDoc()
 {
+    g_pElementizer->Reset();
+    g_pCompilerData->doc_flag = false;
+    g_pCompilerData->doc_mode = true;
+
+    bool bEof = false;
+
+    // in doc mode, this will print out any doc comments at the top of the obj
+    // GetNext() does it, and also sets the doc_flag if it did
+    // it'll return type_end until it gets to the first non-comment line (start of code)
+    while (!bEof)
+    {
+        if (!g_pElementizer->GetNext(bEof))
+        {
+            return false;
+        }
+        if (g_pElementizer->GetType() != type_end)
+        {
+            break;
+        }
+    }
+
+    // if something was printed above then add a CR
+    if (g_pCompilerData->doc_flag)
+    {
+        if (!PrintChr(13))
+        {
+            return false;
+        }
+    }
+
+    // clear doc_mode flag so we can print the interface stuff without doc comments in it
+    g_pCompilerData->doc_mode = false;
+    int savedSourceStart = g_pCompilerData->source_start;
+
+    char tempStr[256];
+    sprintf(tempStr, "Object \"%s", g_pCompilerData->obj_title);
+    if (!PrintString(tempStr))
+    {
+        return false;
+    }
+    if (!PrintString("\" Interface:\r\r"))
+    {
+        return false;
+    }
+    if (!CompileDoc_PrintAll(savedSourceStart))
+    {
+        return false;
+    }
+    short variables = *((short*)&(g_pCompilerData->obj[0])) >> 2;
+    short program = *((short*)&(g_pCompilerData->obj[2])) >> 2;
+    sprintf(tempStr, "\rProgram:  %d Longs\rVariable: %d Longs\r", program, variables);
+    if (!PrintString(tempStr))
+    {
+        return false;
+    }
+
+    // doc_flag will get set when printing the interfaces above
+    if (g_pCompilerData->doc_flag)
+    {
+        // set doc mode to true, in order to print the interfaces (again) with doc comments in it
+        g_pCompilerData->doc_mode = true;
+
+        // doc comments in pubs print interface again, this time with doc comments
+        if (!CompileDoc_PrintAll(savedSourceStart))
+        {
+            return false;
+        }
+    }
+
     return true;
 }
 

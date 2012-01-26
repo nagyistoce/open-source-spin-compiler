@@ -230,7 +230,7 @@ bool CompileDatBlocks_File(bool bSymbol, bool bResSymbol, int& size)
             return true;
         }
     }
-    
+
     // file data not found
     g_pCompilerData->error = true;
     g_pCompilerData->error_msg = g_pErrorStrings[error_idfnf];
@@ -411,7 +411,7 @@ bool CompileDatBlocks_ValidateCallSymbol(bool bIsRet, char* pSymbol)
         g_pCompilerData->error_msg = g_pErrorStrings[bIsRet ? error_raioor : error_aioor];
         return false;
     }
-        
+
     return true;
 }
 
@@ -468,7 +468,7 @@ bool CompileDatBlocks_AsmInstruction(bool& bEof, int pass, bool bSymbol, bool bR
     else if (opcode == 0x15) // call?
     {
         // make 'jmpret label_ret, #label'
-        instruction ^= 0x08C00000; 
+        instruction ^= 0x08C00000;
         if (!g_pElementizer->GetElement(type_pound))
         {
             return false;
@@ -495,7 +495,7 @@ bool CompileDatBlocks_AsmInstruction(bool& bEof, int pass, bool bSymbol, bool bR
                 }
             }
             instruction |= (g_pElementizer->GetValue() >> 18); // set #label
-            
+
             pSymbol[length] = '_';
             pSymbol[length+1] = 'R';
             pSymbol[length+2] = 'E';
@@ -553,7 +553,7 @@ bool CompileDatBlocks_AsmInstruction(bool& bEof, int pass, bool bSymbol, bool bR
             g_pCompilerData->error_msg = g_pErrorStrings[error_srccex];
             return false;
         }
-        
+
         // set s on instruction
         instruction |= s;
     }
@@ -711,7 +711,7 @@ bool CompileDatBlocks_AsmCondition(bool& bEof, int pass, bool bSymbol, bool bRes
     {
         return CompileDatBlocks_AsmInstruction(bEof, pass, bSymbol, bResSymbol, size, condition);
     }
-    
+
     g_pCompilerData->error = true;
     g_pCompilerData->error_msg = g_pErrorStrings[error_eaasmi];
     return false;
