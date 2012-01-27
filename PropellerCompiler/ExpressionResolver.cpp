@@ -634,25 +634,25 @@ bool PerformOp()
             result = value1 << value2;
             break;
 
-        case op_min:
+        case op_min:  // limit minimum
             if (g_pCompilerData->intMode == 2)
             {
-                fResult = fValue1 < fValue2 ? fValue1 : fValue2;
+                fResult = (fValue1 < fValue2) ? fValue2 : fValue1;
             }
             else
             {
-                result = value1 < value2 ? value1 : value2;
+                result = (value1 < value2) ? value2 : value1;
             }
             break;
 
-        case op_max:
+        case op_max:  // limit maximum
             if (g_pCompilerData->intMode == 2)
             {
-                fResult = fValue1 > fValue2 ? fValue1 : fValue2;
+                fResult = (fValue1 > fValue2) ? fValue2 : fValue1;
             }
             else
             {
-                result = value1 > value2 ? value1 : value2;
+                result = (value1 > value2) ? value2 : value1;
             }
             break;
 
