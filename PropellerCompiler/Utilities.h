@@ -52,7 +52,7 @@ extern bool IncrementAsmLocal();
 extern bool AddFileName(int& fileCount, int& fileIndex, char* pFilenames, int* pNameStart, int* pNameFinish, int error);
 extern bool AddPubConListByte(char value);
 extern bool AddSymbolToPubConList();
-extern bool ConAssign(bool bFloat);
+extern bool ConAssign(bool bFloat, int value);
 extern bool HandleConSymbol(int pass);
 
 extern int rol(unsigned int value, int places);

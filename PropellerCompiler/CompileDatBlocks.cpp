@@ -430,7 +430,7 @@ bool CompileDatBlocks_AsmInstruction(bool& bEof, int pass, bool bSymbol, bool bR
         opcode = g_pElementizer->GetAsm() & 0x000000FF;
     }
 
-    int instruction = opcode << 8;
+    unsigned int instruction = opcode << 8;
 
     if (opcode & 0x80) // sys instruction
     {

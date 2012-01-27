@@ -662,10 +662,8 @@ bool AddSymbolToPubConList()
     return true;
 }
 
-bool ConAssign(bool bFloat)
+bool ConAssign(bool bFloat, int value)
 {
-    int value = GetResult();
-
     if (g_pCompilerData->assign_flag == 0)
     {
         // verify
@@ -740,7 +738,7 @@ bool HandleConSymbol(int pass)
         }
         if (g_pCompilerData->bUndefined == false)
         {
-            if (!ConAssign(bFloat))
+            if (!ConAssign(bFloat, GetResult()))
             {
                 return false;
             }
@@ -753,13 +751,21 @@ bool HandleConSymbol(int pass)
         {
             return false;
         }
-        g_pElementizer->GetElement(type_rightb);
+        if (!g_pElementizer->GetElement(type_rightb))
+        {
+            return false;
+        }
         if (g_pCompilerData->bUndefined == false)
         {
             if (g_pCompilerData->enum_valid == 1)
             {
                 int temp = g_pCompilerData->enum_value;
                 g_pCompilerData->enum_value = g_pElementizer->GetValue() + temp;
+
+                if (!ConAssign(bFloat, temp))
+                {
+                    return false;
+                }
             }
         }
         else
@@ -776,6 +782,11 @@ bool HandleConSymbol(int pass)
         {
             int temp = g_pCompilerData->enum_value;
             g_pCompilerData->enum_value = 1 + temp;
+
+            if (!ConAssign(bFloat, temp))
+            {
+                return false;
+            }
         }
     }
     else
