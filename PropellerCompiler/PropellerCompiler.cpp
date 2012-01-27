@@ -1907,7 +1907,7 @@ bool CompileDoc()
     g_pCompilerData->doc_mode = false;
     int savedSourceStart = g_pCompilerData->source_start;
 
-    char tempStr[256];
+    char tempStr[512];
     sprintf(tempStr, "Object \"%s", g_pCompilerData->obj_title);
     if (!PrintString(tempStr))
     {
