@@ -619,19 +619,19 @@ bool PerformOp()
     switch(g_pCompilerData->savedOp[g_pCompilerData->currentOp-1])
     {
         case op_ror:
-            result = ror(value1, value2);
+            result = ror(value1, (value2 & 0xFF));
             break;
 
         case op_rol:
-            result = rol(value1, value2);
+            result = rol(value1, (value2 & 0xFF));
             break;
 
         case op_shr:
-            result = value1 >> value2;
+            result = value1 >> (value2 & 0xFF);
             break;
 
         case op_shl:
-            result = value1 << value2;
+            result = value1 << (value2 & 0xFF);
             break;
 
         case op_min:  // limit minimum
@@ -736,27 +736,13 @@ bool PerformOp()
             break;
 
         case op_log_and:
-            if (g_pCompilerData->intMode == 2)
+            if (value1 != 0)
             {
-                if (value1 != 0)
-                {
-                    value1 = 0x3F800000; // 1.0f
-                }
-                if (value2 != 0)
-                {
-                    value2 = 0x3F800000; // 1.0f
-                }
+                value1 = 0xFFFFFFFF;
             }
-            else
+            if (value2 != 0)
             {
-                if (value1 != 0)
-                {
-                    value1 = 0xFFFFFFFF;
-                }
-                if (value2 != 0)
-                {
-                    value2 = 0xFFFFFFFF;
-                }
+                value2 = 0xFFFFFFFF;
             }
             result = value1 & value2;
             if (g_pCompilerData->intMode == 2)
@@ -782,27 +768,13 @@ bool PerformOp()
             break;
 
         case op_log_or:
-            if (g_pCompilerData->intMode == 2)
+            if (value1 != 0)
             {
-                if (value1 != 0)
-                {
-                    value1 = 0x3F800000; // 1.0f
-                }
-                if (value2 != 0)
-                {
-                    value2 = 0x3F800000; // 1.0f
-                }
+                value1 = 0xFFFFFFFF;
             }
-            else
+            if (value2 != 0)
             {
-                if (value1 != 0)
-                {
-                    value1 = 0xFFFFFFFF;
-                }
-                if (value2 != 0)
-                {
-                    value2 = 0xFFFFFFFF;
-                }
+                value2 = 0xFFFFFFFF;
             }
             result = value1 | value2;
             if (g_pCompilerData->intMode == 2)
@@ -820,7 +792,7 @@ bool PerformOp()
 
         case op_dcd:
             result = 1;
-            result <<= (value2 & 0xFF);
+            result <<= (value1 & 0xFF);
             break;
 
         case op_mul:
@@ -938,20 +910,6 @@ bool PerformOp()
             break;
 
         case op_log_not:
-            if (g_pCompilerData->intMode == 2)
-            {
-                if (fValue1 != 0)
-                {
-                    fValue1 = 1.0f;
-                }
-            }
-            else
-            {
-                if (value1 != 0)
-                {
-                    value1 = 0xFFFFFFFF;
-                }
-            }
             result = !value1;
             if (g_pCompilerData->intMode == 2)
             {
