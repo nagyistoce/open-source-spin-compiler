@@ -327,7 +327,7 @@ bool CompileVariable(unsigned char vOperation, unsigned char vOperator, unsigned
     }
     else
     {
-        if (type == type_dat_byte || size != 2 || address >= 8*4 || indexSourcePtr != 0)
+        if ((type != type_var_byte && type != type_loc_byte) || size != 2 || address >= 8*4 || indexSourcePtr != 0)
         {
             // not compact
             byteCode = 0x80 | (size << 5);

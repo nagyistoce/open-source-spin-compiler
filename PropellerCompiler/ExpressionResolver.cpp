@@ -491,7 +491,7 @@ bool CheckConstant(bool& bConstant)
         }
         if (CheckDat())
         {
-            g_pCompilerData->intermediateResult &= 0x0000FFFF;
+            g_pCompilerData->intermediateResult = g_pElementizer->GetValue() & 0x0000FFFF;
             return true;
         }
         if (!CheckUndefined())

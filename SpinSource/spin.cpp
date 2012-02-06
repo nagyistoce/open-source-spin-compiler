@@ -583,10 +583,10 @@ void UnicodeToPASCII(char* pBuffer, int nBufferLength, char* pPASCIIBuffer)
         int nDestOffset = 0;
         while (nSourceOffset < nBufferLength)
         {
-            short nChar = *((short*)(&pBuffer[nSourceOffset]));
-            if (nChar != 0x000A && nChar != -257) // -257 == 0xFEFF
+            unsigned short nChar = *((unsigned short*)(&pBuffer[nSourceOffset]));
+            if (nChar != 0x000A && nChar != 0xFEFF) // -257 == 0xFEFF
             {
-                pPASCIIBuffer[nDestOffset] = aCharTxMap[(nChar | ((nChar >> 5) & !(nChar >> 4) & 0x0100)) & 0x07FF];
+                pPASCIIBuffer[nDestOffset] = aCharTxMap[(nChar | ((nChar >> 5) & ~(nChar >> 4) & 0x0100)) & 0x07FF];
                 nDestOffset++;
             }
             nSourceOffset += 2;

@@ -231,7 +231,7 @@ bool Elementizer::GetNext(bool& bEof)
             }
 
             // return the character in value
-            m_value = currentChar;
+            m_value = currentChar & 0x000000FF;
 
             // check the next character, it's it's not a " then setup so the next
             // call returns a type_comma, if it is a " then it means it's a one character
