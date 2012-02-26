@@ -80,7 +80,7 @@ struct CompilerDataInternal : public CompilerData
 
     // used by Object Distiller (DistillObjects.cpp)
     int             dis_ptr;
-    short           dis[distiller_limit];
+    unsigned short  dis[distiller_limit];
 
     // used for string constant processing (StringConstantRoutines.cpp)
     bool            str_enable;

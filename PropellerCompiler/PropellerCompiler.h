@@ -118,6 +118,8 @@ struct CompilerData
     unsigned char   clkmode;
     int             clkfreq;
     int             debugbaud;                      // 0 = no debug, > 0 = debug at DebugBaud rate
+
+    bool            bDATonly;                       // only compile DAT sections (into obj)
 };
 
 // public functions

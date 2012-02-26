@@ -22,7 +22,7 @@
 #include "Elementizer.h"
 #include "ErrorStrings.h"
 
-bool DistillSetup_Enter(short value)
+bool DistillSetup_Enter(unsigned short value)
 {
     if (g_pCompilerData->dis_ptr == distiller_limit)
     {
@@ -34,7 +34,7 @@ bool DistillSetup_Enter(short value)
     return true;
 }
 
-bool DistillSetup_Record(short id, short offset, short& subObjectId)
+bool DistillSetup_Record(short id, unsigned short offset, unsigned short& subObjectId)
 {
     if (!DistillSetup_Enter(id))
     {
@@ -44,7 +44,7 @@ bool DistillSetup_Record(short id, short offset, short& subObjectId)
     {
         return false;
     }
-    short numSubObjects = (short)(g_pCompilerData->obj[offset+3]);
+    unsigned short numSubObjects = (unsigned short)(g_pCompilerData->obj[offset+3]);
     if (!DistillSetup_Enter(numSubObjects))
     {
         return false;
@@ -60,10 +60,10 @@ bool DistillSetup_Record(short id, short offset, short& subObjectId)
             }
         }
 
-        short nextSubObjects = (short)(g_pCompilerData->obj[offset+2]);
+        unsigned short nextSubObjects = (unsigned short)(g_pCompilerData->obj[offset+2]);
         for (short i = 0; i < numSubObjects; i++)
         {
-            short offsetAdjust = *((short*)&(g_pCompilerData->obj[offset + ((nextSubObjects + i) * 4)]));
+            unsigned short offsetAdjust = *((unsigned short*)&(g_pCompilerData->obj[offset + ((nextSubObjects + i) * 4)]));
             if (!DistillSetup_Record(startingSubObjectId + i, offset + offsetAdjust, subObjectId))
             {
                 return false;
@@ -77,28 +77,28 @@ bool DistillSetup_Record(short id, short offset, short& subObjectId)
 bool DistillSetup()
 {
     g_pCompilerData->dis_ptr = 0;
-    short subObjectId = 1;
+    unsigned short subObjectId = 1;
     if (!DistillSetup_Record(0, 0, subObjectId))
     {
         return false;
     }
 
-    short disPtr = 0;
+    int disPtr = 0;
     while (disPtr < g_pCompilerData->dis_ptr)
     {
         // do we have sub objects?
-        short numSubObjects = g_pCompilerData->dis[disPtr + 2];
+        unsigned short numSubObjects = g_pCompilerData->dis[disPtr + 2];
         if (numSubObjects > 0) 
         {
-            short offset = g_pCompilerData->dis[disPtr + 1];
+            unsigned short offset = g_pCompilerData->dis[disPtr + 1];
 
             disPtr += numSubObjects; 
 
-            short offsetAdjust = (short)(g_pCompilerData->obj[offset + 2]);
+            unsigned short offsetAdjust = (unsigned short)(g_pCompilerData->obj[offset + 2]);
             unsigned char* pObj = &(g_pCompilerData->obj[offset + (offsetAdjust * 4)]);
             for (int i = 0; i < numSubObjects; i++)
             {
-                *((short*)&pObj[0]) = 0;
+                *((unsigned short*)&pObj[0]) = 0;
                 pObj += 4;
             }
         }
@@ -109,14 +109,14 @@ bool DistillSetup()
     return true;
 }
 
-void DistillEliminate_Update(short objectId, int newDisPtr)
+void DistillEliminate_Update(unsigned short objectId, int newDisPtr)
 {
     int disPtr = 0;
 
     while (disPtr < g_pCompilerData->dis_ptr)
     {
         disPtr += 3;
-        short numSubObjects = g_pCompilerData->dis[disPtr - 1];
+        unsigned short numSubObjects = g_pCompilerData->dis[disPtr - 1];
         if (numSubObjects > 0)
         {
             for (int i = 0; i < numSubObjects; i++)
@@ -137,7 +137,7 @@ void DistillEliminate()
 
     while (disPtr < g_pCompilerData->dis_ptr)
     {
-        short numSubObjects = g_pCompilerData->dis[disPtr + 2];
+        unsigned short numSubObjects = g_pCompilerData->dis[disPtr + 2];
         if (numSubObjects > 0)
         {
             int i;
@@ -164,7 +164,7 @@ void DistillEliminate()
         bool bRestart = false;
         while (newDisPtr < g_pCompilerData->dis_ptr)
         {
-            short newNumSubObjects = g_pCompilerData->dis[newDisPtr + 2];
+            unsigned short newNumSubObjects = g_pCompilerData->dis[newDisPtr + 2];
 
             if (numSubObjects != newNumSubObjects)
             {
@@ -191,7 +191,7 @@ void DistillEliminate()
             }
             // compare the object binaries
             unsigned char* pObj = &(g_pCompilerData->obj[g_pCompilerData->dis[disPtr+1]]);
-            short objLength = *((short*)pObj);
+            unsigned short objLength = *((unsigned short*)pObj);
             if (memcmp(pObj, &(g_pCompilerData->obj[g_pCompilerData->dis[newDisPtr+1]]), (size_t)objLength) != 0)
             {
                 // point to next object record
@@ -227,12 +227,12 @@ static unsigned char s_rebuildBuffer[obj_limit];
 void DistillRebuild()
 {
     int disPtr = 0;
-    short rebuildPtr = 0;
+    unsigned short rebuildPtr = 0;
     while (disPtr < g_pCompilerData->dis_ptr)
     {
         // copy the object from obj into the rebuild buffer
         unsigned char* pObj = &(g_pCompilerData->obj[g_pCompilerData->dis[disPtr + 1]]);
-        short objLength = *((short*)pObj);
+        unsigned short objLength = *((unsigned short*)pObj);
         memcpy(&(s_rebuildBuffer[rebuildPtr]), pObj, (size_t)objLength);
 
         // fixup the distiller record
@@ -251,19 +251,19 @@ void DistillRebuild()
 
 void DistillReconnect(int disPtr = 0)
 {
-    short numSubObjects = g_pCompilerData->dis[disPtr + 2];
+    unsigned short numSubObjects = g_pCompilerData->dis[disPtr + 2];
     if (numSubObjects > 0)
     {
         // this objects offset in the obj
-        short objectOffset = g_pCompilerData->dis[disPtr + 1]; 
+        unsigned short objectOffset = g_pCompilerData->dis[disPtr + 1]; 
         // the offset (number of longs) to the sub-object offset list within this obj
         unsigned char subObjectOffsetListPtr = g_pCompilerData->obj[objectOffset + 2];
         // pointer to the sub-object offset list for this obj
-        short* pSubObjectOffsetList = (short*)&(g_pCompilerData->obj[objectOffset + (subObjectOffsetListPtr * 4)]);
+        unsigned short* pSubObjectOffsetList = (unsigned short*)&(g_pCompilerData->obj[objectOffset + (subObjectOffsetListPtr * 4)]);
 
         for (int i = 0; i < numSubObjects; i++)
         {
-            short subObjectId = g_pCompilerData->dis[disPtr + 3 + i] & 0x7FFF;
+            unsigned short subObjectId = g_pCompilerData->dis[disPtr + 3 + i] & 0x7FFF;
 
             // find offset of sub-object
             int scanDisPtr = 0;

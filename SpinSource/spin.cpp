@@ -39,7 +39,7 @@ int     s_nObjStackPtr = 0;
 CompilerData* s_pCompilerData = NULL;
 
 bool CompileRecursively(char* pFilename);
-void ComposeRAM(unsigned char** ppBuffer, int& bufferSize);
+void ComposeRAM(unsigned char** ppBuffer, int& bufferSize, bool bDATonly);
 
 //
 // code for handling directory paths (used with -I option)
@@ -151,7 +151,7 @@ int main(int argc, char* argv[])
     bool bVerbose = false;
     bool bQuiet = false;
     bool bDocMode = false;
-    //bool bDATonly = false;
+    bool bDATonly = false;
 
     // get the arguments
     for(int i = 1; i < argc; i++)
@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
                 break;
 
             case 'c':
-                //bDATonly = true;
+                bDATonly = true;
                 break;
 
             case 'd':
@@ -235,7 +235,14 @@ int main(int argc, char* argv[])
     {
         int offset = pTemp - &binaryFilename[0];
         binaryFilename[offset+1] = 0;
-        strcat(&binaryFilename[0], "binary");
+        if (bDATonly)
+        {
+            strcat(&binaryFilename[0], "dat");
+        }
+        else
+        {
+            strcat(&binaryFilename[0], "binary");
+        }
     }
 
     if (!bQuiet)
@@ -252,6 +259,8 @@ int main(int argc, char* argv[])
     s_pCompilerData->doc = new char[DocLimit];
     s_pCompilerData->doc_limit = DocLimit;
     memset(s_pCompilerData->doc, 0, DocLimit);
+
+    s_pCompilerData->bDATonly = bDATonly;
 
     // copy filename into obj_title, and chop off the .spin
     strcpy(s_pCompilerData->obj_title, infile);
@@ -273,7 +282,7 @@ int main(int argc, char* argv[])
 
     unsigned char* pBuffer = NULL;
     int bufferSize = 0;
-    ComposeRAM(&pBuffer, bufferSize);
+    ComposeRAM(&pBuffer, bufferSize, bDATonly);
     FILE* pFile = fopen(binaryFilename, "wb");
     if (pFile)
     {
@@ -282,7 +291,7 @@ int main(int argc, char* argv[])
     }
     delete [] pBuffer;
 
-    if (bVerbose && !bQuiet)
+    if (bVerbose && !bQuiet && !bDATonly)
     {
         // do stuff with list and/or doc here
         int listOffset = 0;
@@ -306,7 +315,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    if (bDocMode && !bQuiet)
+    if (bDocMode && !bQuiet && !bDATonly)
     {
         // do stuff with list and/or doc here
         int docOffset = 0;
@@ -337,44 +346,54 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-void ComposeRAM(unsigned char** ppBuffer, int& bufferSize)
+void ComposeRAM(unsigned char** ppBuffer, int& bufferSize, bool bDATonly)
 {
-  unsigned short varsize = *((unsigned short*)&(s_pCompilerData->obj[0]));                      // variable size (in bytes)
-  unsigned short codsize = *((unsigned short*)&(s_pCompilerData->obj[2]));                      // code size (in bytes)
-  unsigned short pubaddr = *((unsigned short*)&(s_pCompilerData->obj[8]));                      // address of first public method
-  unsigned short publocs = *((unsigned short*)&(s_pCompilerData->obj[10]));                     // number of stack variables (locals), in bytes, for the first public method
-  unsigned short pbase = 0x0010;                                                                // base of object code
-  unsigned short vbase = pbase + codsize;                                                       // variable base = object base + code size
-  unsigned short dbase = vbase + varsize + 8;                                                   // data base = variable base + variable size + 8
-  unsigned short pcurr = pbase + pubaddr;                                                       // Current program start = object base + public address (first public method)
-  unsigned short dcurr = dbase + 4 + (s_pCompilerData->first_pub_parameters << 2) + publocs;    // current data stack pointer = data base + 4 + FirstParams*4 + publocs
+    if (!bDATonly)
+    {
+        unsigned short varsize = *((unsigned short*)&(s_pCompilerData->obj[0]));                      // variable size (in bytes)
+        unsigned short codsize = *((unsigned short*)&(s_pCompilerData->obj[2]));                      // code size (in bytes)
+        unsigned short pubaddr = *((unsigned short*)&(s_pCompilerData->obj[8]));                      // address of first public method
+        unsigned short publocs = *((unsigned short*)&(s_pCompilerData->obj[10]));                     // number of stack variables (locals), in bytes, for the first public method
+        unsigned short pbase = 0x0010;                                                                // base of object code
+        unsigned short vbase = pbase + codsize;                                                       // variable base = object base + code size
+        unsigned short dbase = vbase + varsize + 8;                                                   // data base = variable base + variable size + 8
+        unsigned short pcurr = pbase + pubaddr;                                                       // Current program start = object base + public address (first public method)
+        unsigned short dcurr = dbase + 4 + (s_pCompilerData->first_pub_parameters << 2) + publocs;    // current data stack pointer = data base + 4 + FirstParams*4 + publocs
 
-  // reset ram
-  *ppBuffer = new unsigned char[vbase];
-  memset(*ppBuffer, 0, vbase);
-  bufferSize = vbase;
+        // reset ram
+        *ppBuffer = new unsigned char[vbase];
+        memset(*ppBuffer, 0, vbase);
+        bufferSize = vbase;
 
-  // set clock frequency and clock mode
-  *((int*)&((*ppBuffer)[0])) = s_pCompilerData->clkfreq;
-  (*ppBuffer)[4] = s_pCompilerData->clkmode;
+        // set clock frequency and clock mode
+        *((int*)&((*ppBuffer)[0])) = s_pCompilerData->clkfreq;
+        (*ppBuffer)[4] = s_pCompilerData->clkmode;
 
-  // set interpreter parameters
-  ((unsigned short*)&((*ppBuffer)[4]))[1] = pbase;         // always 0x0010
-  ((unsigned short*)&((*ppBuffer)[4]))[2] = vbase;
-  ((unsigned short*)&((*ppBuffer)[4]))[3] = dbase;
-  ((unsigned short*)&((*ppBuffer)[4]))[4] = pcurr;
-  ((unsigned short*)&((*ppBuffer)[4]))[5] = dcurr;
+        // set interpreter parameters
+        ((unsigned short*)&((*ppBuffer)[4]))[1] = pbase;         // always 0x0010
+        ((unsigned short*)&((*ppBuffer)[4]))[2] = vbase;
+        ((unsigned short*)&((*ppBuffer)[4]))[3] = dbase;
+        ((unsigned short*)&((*ppBuffer)[4]))[4] = pcurr;
+        ((unsigned short*)&((*ppBuffer)[4]))[5] = dcurr;
 
-  // set code
-  memcpy(&((*ppBuffer)[pbase]), &(s_pCompilerData->obj[4]), codsize);
+        // set code
+        memcpy(&((*ppBuffer)[pbase]), &(s_pCompilerData->obj[4]), codsize);
 
-  // install ram checksum byte
-  unsigned char sum = 0;
-  for (int i = 0; i < vbase; i++)
-  {
-      sum = sum + (*ppBuffer)[i];
-  }
-  (*ppBuffer)[5] = (unsigned char)((-(sum+2028)) );
+        // install ram checksum byte
+        unsigned char sum = 0;
+        for (int i = 0; i < vbase; i++)
+        {
+          sum = sum + (*ppBuffer)[i];
+        }
+        (*ppBuffer)[5] = (unsigned char)((-(sum+2028)) );
+    }
+    else
+    {
+        int size = s_pCompilerData->obj_ptr;
+        *ppBuffer = new unsigned char[size];
+        bufferSize = size;
+        memcpy(&((*ppBuffer)[0]), &(s_pCompilerData->obj[0]), size);
+    }
 }
 
 // returns NULL if the file failed to open or is 0 length

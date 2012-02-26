@@ -108,7 +108,7 @@ const char* Compile1()
     g_pCompilerData->info_count = 0;
 
     // reset obj pointer based on compile_mode
-    if (g_pCompilerData->compile_mode == 0)
+    if (g_pCompilerData->compile_mode == 0 && !g_pCompilerData->bDATonly)
     {
         g_pCompilerData->obj_ptr = 4;
     }
@@ -163,57 +163,61 @@ const char* Compile2()
     {
         return g_pCompilerData->error_msg;
     }
-    if (!CompileSubBlocks())
-    {
-        return g_pCompilerData->error_msg;
-    }
-    if (!CompileObjBlocks())
-    {
-        return g_pCompilerData->error_msg;
-    }
 
-    if (!DistillObjBlocks())
+    if (!g_pCompilerData->bDATonly)
     {
-        return g_pCompilerData->error_msg;
-    }
+        if (!CompileSubBlocks())
+        {
+            return g_pCompilerData->error_msg;
+        }
+        if (!CompileObjBlocks())
+        {
+            return g_pCompilerData->error_msg;
+        }
 
-    if (!CompileFinal())
-    {
-        return g_pCompilerData->error_msg;
-    }
+        if (!DistillObjBlocks())
+        {
+            return g_pCompilerData->error_msg;
+        }
 
-    if (!PointToFirstCon())
-    {
-        return g_pCompilerData->error_msg;
-    }
-    if (!DetermineStack())
-    {
-        return g_pCompilerData->error_msg;
-    }
-    if (!DetermineClock())
-    {
-        return g_pCompilerData->error_msg;
-    }
-    if (!DetermineDebug())
-    {
-        return g_pCompilerData->error_msg;
-    }
+        if (!CompileFinal())
+        {
+            return g_pCompilerData->error_msg;
+        }
 
-    if (!PrintObj())
-    {
-        return g_pCompilerData->error_msg;
+        if (!PointToFirstCon())
+        {
+            return g_pCompilerData->error_msg;
+        }
+        if (!DetermineStack())
+        {
+            return g_pCompilerData->error_msg;
+        }
+        if (!DetermineClock())
+        {
+            return g_pCompilerData->error_msg;
+        }
+        if (!DetermineDebug())
+        {
+            return g_pCompilerData->error_msg;
+        }
+
+        if (!PrintObj())
+        {
+            return g_pCompilerData->error_msg;
+        }
+
+        g_pCompilerData->list_length = g_pCompilerData->print_length;
+
+        SetPrint(g_pCompilerData->doc, g_pCompilerData->doc_limit);
+
+        if (!CompileDoc())
+        {
+            return g_pCompilerData->error_msg;
+        }
+
+        g_pCompilerData->doc_length = g_pCompilerData->print_length;
     }
-
-    g_pCompilerData->list_length = g_pCompilerData->print_length;
-
-    SetPrint(g_pCompilerData->doc, g_pCompilerData->doc_limit);
-
-    if (!CompileDoc())
-    {
-        return g_pCompilerData->error_msg;
-    }
-
-    g_pCompilerData->doc_length = g_pCompilerData->print_length;
 
     g_pCompilerData->source_start = 0;
     g_pCompilerData->source_finish = 0;
@@ -610,9 +614,11 @@ bool CompileSubBlocksId_Compile(int blockType, bool &bFirst)
 #ifdef RPE_DEBUG
                     printf("Pub/Pri %s %d (%d, %d)\n", g_pCompilerData->symbolBackup, value, params, g_pCompilerData->obj_ptr);
 #endif
-
-                    // enter locals count into index
-                    EnterObjLong(locals<<16);
+                    if (!g_pCompilerData->bDATonly)
+                    {
+                        // enter locals count into index
+                        EnterObjLong(locals<<16);
+                    }
 
                     if (blockType == block_pub)
                     {
