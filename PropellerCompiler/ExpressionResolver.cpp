@@ -729,9 +729,9 @@ bool PerformOp()
             result = 0;
             for (int i = 0; i < value2; i++)
             {
+                result <<= 1;
                 result |= (value1 & 0x01);
                 value1 >>= 1;
-                result <<= 1;
             }
             break;
 
