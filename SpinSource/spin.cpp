@@ -289,6 +289,12 @@ int main(int argc, char* argv[])
         fwrite(pBuffer, bufferSize, 1, pFile);
         fclose(pFile);
     }
+
+    if (!bQuiet)
+    {
+        printf("Program size is %d bytes\n", ((unsigned short*)pBuffer)[7]);
+    }
+
     delete [] pBuffer;
 
     if (bVerbose && !bQuiet && !bDATonly)
@@ -596,8 +602,10 @@ void UnicodeToPASCII(char* pBuffer, int nBufferLength, char* pPASCIIBuffer)
         bUnicode = true;
     }
 
+    // the compiler code expects 0x0D line endings, this code will strip out 0x0A from the line endings and put in 0x0D if they are not there.
     if (bUnicode)
     {
+        // unicode, copy over translating line endings
         int nSourceOffset = 0;
         int nDestOffset = 0;
         while (nSourceOffset < nBufferLength)
@@ -607,6 +615,14 @@ void UnicodeToPASCII(char* pBuffer, int nBufferLength, char* pPASCIIBuffer)
             {
                 pPASCIIBuffer[nDestOffset] = aCharTxMap[(nChar | ((nChar >> 5) & ~(nChar >> 4) & 0x0100)) & 0x07FF];
                 nDestOffset++;
+            }
+            else if (nChar == 0x000A)
+            {
+                if (nSourceOffset == 0 || *((unsigned short*)(&pBuffer[nSourceOffset-2])) != 0x000D)
+                {
+                    pPASCIIBuffer[nDestOffset] = 0x0D;
+                    nDestOffset++;
+                }
             }
             nSourceOffset += 2;
         }
