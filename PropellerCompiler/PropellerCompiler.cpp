@@ -379,7 +379,7 @@ bool CompileConBlocks(int pass)
                 else if (g_pElementizer->GetType() == type_pound)
                 {
                     // pound
-                    if (!GetTryValue((pass==1), true))
+                    if (!GetTryValue(pass == 1 ? true : false, true))
                     {
                         return false;
                     }

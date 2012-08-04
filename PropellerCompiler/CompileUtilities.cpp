@@ -645,7 +645,7 @@ bool CompileAddress(int address)
     address -= g_pCompilerData->obj_ptr; // make relative address
     address--; // compensate for single-byte
 
-    if (abs(address) <= 64)
+    if ((address < 0 && abs(address) <= 64) || (address >= 0 && address < 64))
     {
         // single byte, enter
         address &= 0x007F;

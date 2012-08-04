@@ -169,7 +169,10 @@ void GetTerm(int& precedence)
     bool bConstant = false;
     if (!CheckConstant(bConstant))
     {
-        return;
+        if (g_pCompilerData->error)
+        {
+            return;
+        }
     }
     if (bConstant)
     {
@@ -213,6 +216,12 @@ void GetTerm(int& precedence)
         {
             return;
         }
+    }
+    else if (g_pCompilerData->bMustResolve)
+    {
+        g_pCompilerData->error = true;
+        g_pCompilerData->error_msg = g_pErrorStrings[error_eacuool];
+        // when we return from here, the calling code will return due to error = true
     }
 }
 
@@ -877,7 +886,7 @@ bool PerformOp()
                 {
                     result = 4;
                 }
-                result &= g_pElementizer->GetOpType();
+                result &= g_pCompilerData->savedOp[g_pCompilerData->currentOp-1];
                 if (result != 0)
                 {
                     fResult = 1.0f;
@@ -901,7 +910,7 @@ bool PerformOp()
                 {
                     result = 4;
                 }
-                result &= g_pElementizer->GetOpType();
+                result &= g_pCompilerData->savedOp[g_pCompilerData->currentOp-1];
                 if (result != 0)
                 {
                     result = 0xFFFFFFFF;

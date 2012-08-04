@@ -401,6 +401,7 @@ bool CompileCase(int column, int param)
     g_pElementizer->SetSourcePtr(savedSourcePtr);
     caseCount = 0;
     bOther = false;
+    bEof = false;
 
     while(!bEof)
     {
