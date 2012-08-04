@@ -386,7 +386,7 @@ bool CompileConBlocks(int pass)
                     if (g_pCompilerData->bUndefined == false)
                     {
                         g_pCompilerData->enum_valid = 1;
-                        g_pCompilerData->enum_value = g_pElementizer->GetValue();
+                        g_pCompilerData->enum_value = GetResult();
                     }
                     else
                     {

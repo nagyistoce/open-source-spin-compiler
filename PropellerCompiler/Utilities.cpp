@@ -760,7 +760,7 @@ bool HandleConSymbol(int pass)
             if (g_pCompilerData->enum_valid == 1)
             {
                 int temp = g_pCompilerData->enum_value;
-                g_pCompilerData->enum_value = g_pElementizer->GetValue() + temp;
+                g_pCompilerData->enum_value = GetResult() + temp;
 
                 if (!ConAssign(bFloat, temp))
                 {
