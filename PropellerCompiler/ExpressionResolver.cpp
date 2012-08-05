@@ -636,7 +636,7 @@ bool PerformOp()
             break;
 
         case op_shr:
-            result = value1 >> (value2 & 0xFF);
+            result = (unsigned int)value1 >> (value2 & 0xFF);
             break;
 
         case op_shl:
