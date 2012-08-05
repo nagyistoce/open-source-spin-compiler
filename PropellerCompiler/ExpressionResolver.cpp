@@ -28,7 +28,7 @@ void ResolveExpression();
 void ResolveSubExpression(int precedence);
 void GetTerm(int& precedence);
 
-bool CheckUndefined();
+bool CheckUndefined(bool& bUndefined);
 bool CheckDat();
 bool CheckConstant(bool& bConstant);
 bool GetObjSymbol(int type, char id);
@@ -225,11 +225,11 @@ void GetTerm(int& precedence)
     }
 }
 
-bool CheckUndefined()
+bool CheckUndefined(bool& bUndefined)
 {
     if (g_pElementizer->GetType() == type_undefined)
     {
-        g_pCompilerData->bUndefined = true;
+        g_pCompilerData->bUndefined = bUndefined = true;
 
         int save_start = g_pCompilerData->source_start;
         int save_finish = g_pCompilerData->source_finish;
@@ -259,7 +259,7 @@ bool CheckUndefined()
     }
     else
     {
-        g_pCompilerData->bUndefined = false;
+        bUndefined = false;
     }
 
     return true;
@@ -417,11 +417,12 @@ bool CheckConstant(bool& bConstant)
         }
     }
 
-    if (!CheckUndefined())
+    bool bUndefined = false;
+    if (!CheckUndefined(bUndefined))
     {
         return false;
     }
-    if (g_pCompilerData->bUndefined)
+    if (bUndefined)
     {
         if (!g_pCompilerData->bMustResolve)
         {
@@ -503,11 +504,12 @@ bool CheckConstant(bool& bConstant)
             g_pCompilerData->intermediateResult = g_pElementizer->GetValue() & 0x0000FFFF;
             return true;
         }
-        if (!CheckUndefined())
+        bool bUndefined = false;
+        if (!CheckUndefined(bUndefined))
         {
             return false;
         }
-        if (g_pCompilerData->bUndefined)
+        if (bUndefined)
         {
             if (!g_pCompilerData->bMustResolve)
             {
@@ -557,6 +559,10 @@ bool CheckConstant(bool& bConstant)
                 g_pCompilerData->error_msg = g_pErrorStrings[error_aioor];
                 return false;
             }
+        }
+        else
+        {
+            g_pCompilerData->intermediateResult = g_pElementizer->GetValue();
         }
         g_pCompilerData->intermediateResult &= 0x0000FFFF;
         return true;
