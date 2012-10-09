@@ -10,11 +10,23 @@
 // PropCom.cpp
 //
 
+//
+// define USE_PREPROCESSOR to enable the preprocessor
+//
+#define USE_PREPROCESSOR
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "../PropellerCompiler/PropellerCompiler.h"
+
+#ifdef USE_PREPROCESSOR
+#include "preprocess.h"
+
+struct preprocess preproc;
+bool s_bPreprocess = false;
+#endif
 
 #define DataLimitStr        "64k"
 #define ImageLimit          32768   // Max size of Propeller Application image file
@@ -62,6 +74,9 @@ struct PathEntry
 
 static PathEntry *path = NULL;
 static PathEntry **pNextPathEntry = &path;
+
+static PathEntry *define = NULL;
+static PathEntry **pNextDefineEntry = &define;
 
 static const char *MakePath(PathEntry *entry, const char *name)
 {
@@ -123,6 +138,20 @@ FILE* OpenFileInPath(const char *name, const char *mode)
     return file;
 }
 
+bool AddDefine(const char *define)
+{
+    PathEntry* entry = (PathEntry*)new char[(sizeof(PathEntry) + strlen(define))];
+    if (!(entry))
+    {
+        return false;
+    }
+    strcpy(entry->path, define);
+    *pNextDefineEntry = entry;
+    pNextDefineEntry = &entry->next;
+    entry->next = NULL;
+    return true;
+}
+
 static void Banner(void)
 {
     fprintf(stdout, "Propeller Spin/PASM Compiler (c)2012 Parallax Inc. DBA Parallax Semiconductor.\n");
@@ -133,15 +162,29 @@ static void Banner(void)
 static void Usage(void)
 {
     Banner();
+#ifdef USE_PREPROCESSOR
     fprintf(stderr, "\
 usage: spin\n\
          [ -I <path> ]     add a directory to the include path\n\
-         [ -c ]            output only DAT sections (not implemented yet)\n\
+         [ -c ]            output only DAT sections\n\
+         [ -d ]            dump out doc mode\n\
+         [ -q ]            quiet mode (suppress banner and non-error text)\n\
+         [ -v ]            verbose output\n\
+         [ -p ]            use preprocessor\n\
+         [ -D <define> ]   add a define (must have -p before any of these)\n\
+         <name.spin>       spin file to compile\n\
+\n");
+#else
+    fprintf(stderr, "\
+usage: spin\n\
+         [ -I <path> ]     add a directory to the include path\n\
+         [ -c ]            output only DAT sections\n\
          [ -d ]            dump out doc mode\n\
          [ -q ]            quiet mode (suppress banner and non-error text)\n\
          [ -v ]            verbose output\n\
          <name.spin>       spin file to compile\n\
 \n");
+#endif
 }
 
 int main(int argc, char* argv[])
@@ -152,6 +195,7 @@ int main(int argc, char* argv[])
     bool bQuiet = false;
     bool bDocMode = false;
     bool bDATonly = false;
+    s_bPreprocess = false;
 
     // get the arguments
     for(int i = 1; i < argc; i++)
@@ -178,6 +222,36 @@ int main(int argc, char* argv[])
                 AddPath(p);
                 break;
 
+#ifdef USE_PREPROCESSOR
+            case 'p':
+                s_bPreprocess = true;
+                break;
+
+            case 'D':
+                if (s_bPreprocess)
+                {
+                    if (argv[i][2])
+                    {
+                        p = &argv[i][2];
+                    }
+                    else if(++i < argc)
+                    {
+                        p = argv[i];
+                    }
+                    else
+                    {
+                        Usage();
+                        return 1;
+                    }
+                    AddDefine(p);
+                }
+                else
+                {
+                    Usage();
+                    return 1;
+                }
+                break;
+#endif
             case 'c':
                 bDATonly = true;
                 break;
@@ -210,6 +284,24 @@ int main(int argc, char* argv[])
             infile = argv[i];
         }
     }
+
+#ifdef USE_PREPROCESSOR
+    if (s_bPreprocess)
+    {
+        pp_init(&preproc);
+
+        // add any predefined symbols here
+        for (PathEntry* entry = define; entry != NULL; entry = entry->next)
+        {
+            pp_define(&preproc, entry->path, "1");
+        }
+
+        pp_define(&preproc, "__SPIN__", "1");
+
+        pp_setcomments(&preproc, "\'", "{", "}");
+
+    }
+#endif
 
     // must have input file
     if (!infile)
@@ -410,18 +502,30 @@ char* LoadFile(char* pFilename, int* pnLength)
     FILE* pFile = OpenFileInPath(pFilename, "rb");
     if (pFile != NULL)
     {
-        // get the length of the file by seeking to the end and using ftell
-        fseek(pFile, 0, SEEK_END);
-        *pnLength = ftell(pFile);
-
-        if (*pnLength > 0)
+#ifdef USE_PREPROCESSOR
+        if (s_bPreprocess)
         {
-            pBuffer = new char[*pnLength+1]; // allocate a buffer that is the size of the file plus one char
-            pBuffer[*pnLength] = 0; // set the end of the buffer to 0 (null)
+            pp_push_file_struct(&preproc, pFile, pFilename);
+            pp_run(&preproc);
+            pBuffer = pp_finish(&preproc);
+            *pnLength = strlen(pBuffer);
+        }
+        else
+#endif
+        {
+            // get the length of the file by seeking to the end and using ftell
+            fseek(pFile, 0, SEEK_END);
+            *pnLength = ftell(pFile);
 
-            // seek back to the beginning of the file and read it in
-            fseek(pFile, 0, SEEK_SET);
-            fread(pBuffer, 1, *pnLength, pFile);
+            if (*pnLength > 0)
+            {
+                pBuffer = new char[*pnLength+1]; // allocate a buffer that is the size of the file plus one char
+                pBuffer[*pnLength] = 0; // set the end of the buffer to 0 (null)
+
+                // seek back to the beginning of the file and read it in
+                fseek(pFile, 0, SEEK_SET);
+                fread(pBuffer, 1, *pnLength, pFile);
+            }
         }
         fclose(pFile);
     }
@@ -496,6 +600,47 @@ int GetData(unsigned char* pDest, char* pFileName, int nMaxSize)
     }
 
     return nBytesRead;
+}
+
+unsigned int DecodeUtf8(const char* pBuffer, int& nCharSize)
+{
+    unsigned int nChar = (unsigned int)((unsigned char)(*pBuffer));
+    if (nChar < 128)
+    {
+        nCharSize = 1;
+    }
+    else if (nChar >= 192 && nChar <= 223)
+    {
+        // character is two bytes
+        nCharSize = 2;
+        nChar = ((nChar & 31) << 6) | ((unsigned int)pBuffer[1] & 63);
+    }
+    else if (nChar >= 224 && nChar <= 239)
+    {
+        // character is three bytes
+        nCharSize = 3;
+        nChar = ((nChar & 15) << 12) | (((unsigned int)pBuffer[1] & 63) << 6) | ((unsigned int)pBuffer[2] & 63);
+    }
+    else if (nChar >= 240 && nChar <= 247)
+    {
+        // character is four bytes
+        nCharSize = 4;
+        nChar = ((nChar & 7) << 18) | (((unsigned int)pBuffer[1] & 63) << 12) | (((unsigned int)pBuffer[2] & 63) << 6) | ((unsigned int)pBuffer[3] & 63);
+    }
+    else if (nChar >= 248 && nChar <= 251)
+    {
+        // character is five bytes
+        nCharSize = 5;
+        nChar = ((nChar & 3) << 24) | (((unsigned int)pBuffer[1] & 63) << 18) | (((unsigned int)pBuffer[2] & 63) << 12) | (((unsigned int)pBuffer[3] & 63) << 6) | ((unsigned int)pBuffer[4] & 63);
+    }
+    else if (nChar >= 252 && nChar <= 253)
+    {
+        // character is six bytes
+        nCharSize = 6;
+        nChar = ((nChar & 1) << 30) | (((unsigned int)pBuffer[1] & 63) << 24) | (((unsigned int)pBuffer[2] & 63) << 18) | (((unsigned int)pBuffer[3] & 63) << 12) | (((unsigned int)pBuffer[4] & 63) << 6) | ((unsigned int)pBuffer[5] & 63);
+    }
+
+    return nChar;
 }
 
 void UnicodeToPASCII(char* pBuffer, int nBufferLength, char* pPASCIIBuffer)
@@ -592,15 +737,38 @@ void UnicodeToPASCII(char* pBuffer, int nBufferLength, char* pPASCIIBuffer)
     };
 
     bool bUnicode = false;
+    bool bUtf8 = false;
+//#ifdef USE_PREPROCESSOR
+//    if (s_bPreprocess)
+//    {
+//        // preprocessor outputs utf8 encoded data, so just force it
+//        bUnicode = true;
+//        bUtf8 = true;
+//    }
+//    else
+//#endif
     // detect Unicode or ASCII form
-    if (*((short*)(&pBuffer[0])) == -257) // -257 == 0xFEFF
+    if (*((short*)(&pBuffer[0])) == -257) // -257 == 0xFEFF which is the UTF-16 BOM character for Little Endian
     {
         bUnicode = true;
     }
-    else if (nBufferLength > 2 && pBuffer[1] == 0)
+    else if (*((short*)(&pBuffer[0])) == -2) // -2 == 0xFFFE which is the UTF-16 BOM character for Big Endian
+    {
+        // we don't handle this format yet
+        printf("Input in UTF-16 in big endian format is not supported yet!\n");
+        exit(-1);
+    }
+    else if (nBufferLength > 2 && pBuffer[1] == 0) // this attempts tp handle the case of a UTF-16 encoded file without a BOM character. It assumes the first character is < 255, thus the second byte is 0
     {
         bUnicode = true;
     }
+    else if (nBufferLength > 2 && pBuffer[0] == 239 && pBuffer[1] == 187 && pBuffer[2] == 191) // handle the UTF-8 BOM sequence case
+    {
+        bUnicode = true;
+        bUtf8 = true;
+    }
+
+    // probably need to add a way to detect utf-8 without a BOM character (need to scan file and see if it's all valid utf-8 form
 
     // the compiler code expects 0x0D line endings, this code will strip out 0x0A from the line endings and put in 0x0D if they are not there.
     if (bUnicode)
@@ -608,9 +776,11 @@ void UnicodeToPASCII(char* pBuffer, int nBufferLength, char* pPASCIIBuffer)
         // unicode, copy over translating line endings
         int nSourceOffset = 0;
         int nDestOffset = 0;
+        unsigned short nPrevChar = 0;
         while (nSourceOffset < nBufferLength)
         {
-            unsigned short nChar = *((unsigned short*)(&pBuffer[nSourceOffset]));
+            int nCharSize = 2;
+            unsigned short nChar =  (bUtf8 == true) ? (unsigned short)DecodeUtf8(&pBuffer[nSourceOffset], nCharSize) : *((unsigned short*)(&pBuffer[nSourceOffset]));
             if (nChar != 0x000A && nChar != 0xFEFF) // -257 == 0xFEFF
             {
                 pPASCIIBuffer[nDestOffset] = aCharTxMap[(nChar | ((nChar >> 5) & ~(nChar >> 4) & 0x0100)) & 0x07FF];
@@ -618,13 +788,14 @@ void UnicodeToPASCII(char* pBuffer, int nBufferLength, char* pPASCIIBuffer)
             }
             else if (nChar == 0x000A)
             {
-                if (nSourceOffset == 0 || *((unsigned short*)(&pBuffer[nSourceOffset-2])) != 0x000D)
+                if (nSourceOffset == 0 || nPrevChar != 0x000D)
                 {
                     pPASCIIBuffer[nDestOffset] = 0x0D;
                     nDestOffset++;
                 }
             }
-            nSourceOffset += 2;
+            nSourceOffset += nCharSize;
+            nPrevChar = nChar;
         }
         pPASCIIBuffer[nDestOffset] = 0;
     }
@@ -684,6 +855,13 @@ bool CompileRecursively(char* pFilename)
         return false;
     }
 
+#ifdef USE_PREPROCESSOR
+    void *definestate = 0;
+    if (s_bPreprocess)
+    {
+        definestate = pp_get_define_state(&preproc);
+    }
+#endif
     GetPASCIISource(pFilename);
 
     if (s_pCompilerData->source == NULL)
@@ -733,6 +911,13 @@ bool CompileRecursively(char* pFilename)
         }
 
         // redo first pass on object
+#ifdef USE_PREPROCESSOR
+        if (s_bPreprocess)
+        {
+            // undo any defines in sub-objects
+            pp_restore_define_state(&preproc, definestate);
+        }
+#endif
         GetPASCIISource(pFilename);
         pErrorString = Compile1();
         if (pErrorString != 0)

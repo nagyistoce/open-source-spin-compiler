@@ -1,13 +1,15 @@
 CC=gcc
 CXX=g++
-CFLAGS+=-DGCC -Wall
+CFLAGS+=-DGCC -Wall -g
 
 
 NAME=spin
 TARGET=spin
 MAIN=SpinSource/$(TARGET)
-MAINOBJ=$(MAIN).o
-MAINSRC=$(MAIN).cpp
+FLEXBUF=SpinSource/flexbuf
+PREPROC=SpinSource/preprocess
+MAINOBJ=$(MAIN).o $(FLEXBUF).o $(PREPROC).o
+MAINSRC=$(MAIN).cpp $(FLEXBUF).c $(PREPROC).c
 LIBDIR=PropellerCompiler
 LIBNAME=$(LIBDIR)/libspin.a
 
