@@ -154,8 +154,8 @@ pp_nextline(struct preprocess *pp)
             A->readfunc = read_single;
         } else {
             A->readfunc = read_latin1;
-            ungetc(c1, f);
             ungetc(c2, f);
+            ungetc(c1, f);
         }
         /* add UTF-8 encoded BOM */
         flexbuf_addchar(&pp->line, 239);
