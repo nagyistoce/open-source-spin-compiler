@@ -738,15 +738,15 @@ void UnicodeToPASCII(char* pBuffer, int nBufferLength, char* pPASCIIBuffer)
 
     bool bUnicode = false;
     bool bUtf8 = false;
-//#ifdef USE_PREPROCESSOR
-//    if (s_bPreprocess)
-//    {
-//        // preprocessor outputs utf8 encoded data, so just force it
-//        bUnicode = true;
-//        bUtf8 = true;
-//    }
-//    else
-//#endif
+#ifdef USE_PREPROCESSOR
+    if (s_bPreprocess)
+    {
+        // preprocessor outputs utf8 encoded data, so just force it
+        bUnicode = true;
+        bUtf8 = true;
+    }
+    else
+#endif
     // detect Unicode or ASCII form
     if (*((short*)(&pBuffer[0])) == -257) // -257 == 0xFEFF which is the UTF-16 BOM character for Little Endian
     {
@@ -762,7 +762,7 @@ void UnicodeToPASCII(char* pBuffer, int nBufferLength, char* pPASCIIBuffer)
     {
         bUnicode = true;
     }
-    else if (nBufferLength > 2 && pBuffer[0] == 239 && pBuffer[1] == 187 && pBuffer[2] == 191) // handle the UTF-8 BOM sequence case
+    else if (nBufferLength > 2 && (unsigned char)pBuffer[0] == 239 && (unsigned char)pBuffer[1] == 187 && (unsigned char)pBuffer[2] == 191) // handle the UTF-8 BOM sequence case
     {
         bUnicode = true;
         bUtf8 = true;

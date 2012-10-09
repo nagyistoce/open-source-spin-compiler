@@ -38,6 +38,30 @@
 #include "flexbuf.h"
 #include "preprocess.h"
 
+#ifdef _MSC_VER
+#define strdup _strdup
+#endif
+
+/*
+ * function to read a single LATIN-1 character
+ * from a file
+ * returns number of bytes placed in buffer, or -1 on EOF
+ */
+static int
+read_latin1(FILE *f, char buf[4])
+{
+  int c = fgetc(f);
+  if (c == EOF)
+    return -1;
+  if (c <= 127) {
+    buf[0] = (char)c;
+    return 1;
+  }
+  buf[0] = 0xC0 + ((c>>6) & 0x1f);
+  buf[1] = 0x80 + ( c & 0x3f );
+  return 2;
+}
+
 /*
  * function to read a single UTF-8 character
  * from a file
@@ -118,21 +142,27 @@ pp_nextline(struct preprocess *pp)
 
     flexbuf_clear(&pp->line);
     if (A->readfunc == NULL) {
-        int c0, c1;
+        int c0, c1, c2;
         c0 = fgetc(f);
         if (c0 < 0) return 0;
-        if (c0 != 0xff) {
+        c1 = fgetc(f);
+        c2 = fgetc(f);
+        if ((c0 == 0xff && c1 == 0xfe) || c1 == 0) {
+            A->readfunc = read_utf16;
+            ungetc(c2, f);
+        } else if (c0 == 239 && c1 == 187 && c2 == 191) {
             A->readfunc = read_single;
-            flexbuf_addchar(&pp->line, c0);
         } else {
-            c1 = fgetc(f);
-            if (c1 == 0xfe) {
-                A->readfunc = read_utf16;
-            } else {
-                A->readfunc = read_single;
-                flexbuf_addchar(&pp->line, c0);
-                ungetc(c1, f);
-            }
+            A->readfunc = read_latin1;
+            ungetc(c1, f);
+            ungetc(c2, f);
+        }
+        /* add UTF-8 encoded BOM */
+        flexbuf_addchar(&pp->line, 239);
+        flexbuf_addchar(&pp->line, 187);
+        flexbuf_addchar(&pp->line, 191);
+        if (A->readfunc == read_latin1) {
+            flexbuf_addchar(&pp->line, c0);
         }
         if (c0 == '\n') {
             flexbuf_addchar(&pp->line, 0);
@@ -645,7 +675,7 @@ handle_define(struct preprocess *pp, ParseState *P, int isDef)
     if (oldvalue && isDef) {
         dowarning(pp, "redefining `%s'", name);
     }
-    name = _strdup(name);
+    name = strdup(name);
 
     if (isDef) {
         parse_skipspaces(P);
@@ -671,7 +701,7 @@ handle_include(struct preprocess *pp, ParseState *P)
         doerror(pp, "no string found for include");
         return;
     }
-    pp_push_file(pp, _strdup(name));
+    pp_push_file(pp, strdup(name));
 }
 
 /*
