@@ -108,7 +108,7 @@ const char* Compile1()
     g_pCompilerData->info_count = 0;
 
     // reset obj pointer based on compile_mode
-    if (g_pCompilerData->compile_mode == 0 && !g_pCompilerData->bDATonly)
+    if (g_pCompilerData->compile_mode == 0)
     {
         g_pCompilerData->obj_ptr = 4;
     }
@@ -170,21 +170,28 @@ const char* Compile2()
         {
             return g_pCompilerData->error_msg;
         }
-        if (!CompileObjBlocks())
-        {
-            return g_pCompilerData->error_msg;
-        }
+    }
 
+    if (!CompileObjBlocks())
+    {
+        return g_pCompilerData->error_msg;
+    }
+
+    if (!g_pCompilerData->bDATonly)
+    {
         if (!DistillObjBlocks())
         {
             return g_pCompilerData->error_msg;
         }
+    }
 
-        if (!CompileFinal())
-        {
-            return g_pCompilerData->error_msg;
-        }
+    if (!CompileFinal())
+    {
+        return g_pCompilerData->error_msg;
+    }
 
+    if (!g_pCompilerData->bDATonly)
+    {
         if (!PointToFirstCon())
         {
             return g_pCompilerData->error_msg;
@@ -894,7 +901,7 @@ bool CompileObjSymbols()
         pData += 4; // move past vsize/psize
 
         // validate checksum and that vsize/psize are valid long addresses
-        if (uChecksum != language_version || vsize & 0x03 || psize & 0x03)
+        if ((!g_pCompilerData->bDATonly && uChecksum != language_version) || vsize & 0x03 || psize & 0x03)
         {
             CompileObjSymbol_BadObj(nFile);
             return false;

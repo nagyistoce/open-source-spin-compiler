@@ -487,10 +487,10 @@ void ComposeRAM(unsigned char** ppBuffer, int& bufferSize, bool bDATonly)
     }
     else
     {
-        int size = s_pCompilerData->obj_ptr;
+        int size = (int)(*((unsigned short*)&(s_pCompilerData->obj[2]))) - 12;
         *ppBuffer = new unsigned char[size];
         bufferSize = size;
-        memcpy(&((*ppBuffer)[0]), &(s_pCompilerData->obj[0]), size);
+        memcpy(&((*ppBuffer)[0]), &(s_pCompilerData->obj[12]), size);
     }
 }
 
