@@ -166,6 +166,7 @@ static void Usage(void)
     fprintf(stderr, "\
 usage: spin\n\
          [ -I <path> ]     add a directory to the include path\n\
+         [ -o <path> ]     output filename\n\
          [ -c ]            output only DAT sections\n\
          [ -d ]            dump out doc mode\n\
          [ -q ]            quiet mode (suppress banner and non-error text)\n\
@@ -178,6 +179,7 @@ usage: spin\n\
     fprintf(stderr, "\
 usage: spin\n\
          [ -I <path> ]     add a directory to the include path\n\
+         [ -o <path> ]     output filename\n\
          [ -c ]            output only DAT sections\n\
          [ -d ]            dump out doc mode\n\
          [ -q ]            quiet mode (suppress banner and non-error text)\n\
@@ -190,6 +192,7 @@ usage: spin\n\
 int main(int argc, char* argv[])
 {
     char* infile = NULL;
+    char* outfile = NULL;
     char* p = NULL;
     bool bVerbose = false;
     bool bQuiet = false;
@@ -220,6 +223,22 @@ int main(int argc, char* argv[])
                     return 1;
                 }
                 AddPath(p);
+                break;
+
+            case 'o':
+                if(argv[i][2])
+                {
+                    outfile = &argv[i][2];
+                }
+                else if(++i < argc)
+                {
+                    outfile = argv[i];
+                }
+                else
+                {
+                    Usage();
+                    return 1;
+                }
                 break;
 
 #ifdef USE_PREPROCESSOR
@@ -297,6 +316,8 @@ int main(int argc, char* argv[])
         }
 
         pp_define(&preproc, "__SPIN__", "1");
+        pp_define(&preproc, "__TARGET__", "P1");
+
 
         pp_setcomments(&preproc, "\'", "{", "}");
 
@@ -313,28 +334,35 @@ int main(int argc, char* argv[])
     // finish the include path
     AddFilePath(infile);
 
-    // create *.binary filename from user passed in spin filename
-    char binaryFilename[256];
-    strcpy(&binaryFilename[0], infile);
-    const char* pTemp = strstr(&binaryFilename[0], ".spin");
-    if (pTemp == 0)
+    char outputFilename[256];
+    if (!outfile)
     {
-        printf("ERROR: spinfile must have .spin extension. You passed in: %s\n", infile);
-        Usage();
-        return 1;
-    }
-    else
-    {
-        int offset = pTemp - &binaryFilename[0];
-        binaryFilename[offset+1] = 0;
-        if (bDATonly)
+        // create *.binary filename from user passed in spin filename
+        strcpy(&outputFilename[0], infile);
+        const char* pTemp = strstr(&outputFilename[0], ".spin");
+        if (pTemp == 0)
         {
-            strcat(&binaryFilename[0], "dat");
+            printf("ERROR: spinfile must have .spin extension. You passed in: %s\n", infile);
+            Usage();
+            return 1;
         }
         else
         {
-            strcat(&binaryFilename[0], "binary");
+            int offset = pTemp - &outputFilename[0];
+            outputFilename[offset+1] = 0;
+            if (bDATonly)
+            {
+                strcat(&outputFilename[0], "dat");
+            }
+            else
+            {
+                strcat(&outputFilename[0], "binary");
+            }
         }
+    }
+    else // use filename specified with -o
+    {
+        strcpy(outputFilename, outfile);
     }
 
     if (!bQuiet)
@@ -375,7 +403,7 @@ int main(int argc, char* argv[])
     unsigned char* pBuffer = NULL;
     int bufferSize = 0;
     ComposeRAM(&pBuffer, bufferSize, bDATonly);
-    FILE* pFile = fopen(binaryFilename, "wb");
+    FILE* pFile = fopen(outputFilename, "wb");
     if (pFile)
     {
         fwrite(pBuffer, bufferSize, 1, pFile);

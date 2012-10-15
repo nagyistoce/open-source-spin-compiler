@@ -30,7 +30,7 @@
 #define data_limit          0x10000
 #define info_limit          1000
 #define distiller_limit     0x4000
-#define symbol_limit        30
+#define symbol_limit        32
 #define symbol_table_limit  0x8000
 #define pubcon_list_limit   0x2000
 #define block_nest_limit    8
