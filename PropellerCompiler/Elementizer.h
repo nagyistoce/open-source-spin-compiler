@@ -88,7 +88,7 @@ public:
     {
         return &(m_currentSymbol[0]);
     }
-    int     GetCurrentLineNumber();
+    int     GetCurrentLineNumber(int &offsetToStartOfLine, int& offsetToEndOfLine);
 
     bool    SubToNeg();                         // convert a sub to a neg
     void    ObjConToCon();                      // convert type_objcon_xx to type_con_xx

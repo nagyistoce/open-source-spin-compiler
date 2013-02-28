@@ -634,19 +634,35 @@ int Elementizer::GetColumn()
     return column + 1;
 }
 
-int Elementizer::GetCurrentLineNumber()
+int Elementizer::GetCurrentLineNumber(int &offsetToStartOfLine, int& offsetToEndOfLine)
 {
     int lineCount = 1;
 
     char* pSource = m_pCompilerData->source;
     int scanEnd = m_pCompilerData->source_start;
+    offsetToStartOfLine = -1;
     while (scanEnd > 0)
     {
         if (pSource[--scanEnd] == 13)
         {
+            if (offsetToStartOfLine == -1)
+            {
+                offsetToStartOfLine = scanEnd+1;
+            }
             lineCount++;
         }
     }
+    scanEnd = m_pCompilerData->source_start;
+    while (pSource[scanEnd] != 0)
+    {
+        if (pSource[scanEnd] == 13 || pSource[scanEnd] == 0)
+        {
+            scanEnd--;
+            break;
+        }
+        scanEnd++;
+    }
+    offsetToEndOfLine = scanEnd;
 
     return lineCount;
 }

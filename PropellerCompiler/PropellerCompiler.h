@@ -126,7 +126,7 @@ struct CompilerData
 extern CompilerData* InitStruct();
 extern const char* Compile1();
 extern const char* Compile2();
-extern bool GetErrorInfo(int& lineNumber, int& column);
+extern bool GetErrorInfo(int& lineNumber, int& column, int& offsetToStartOfLine, int& offsetToEndOfLine, int& offendingItemStart, int& offendingItemEnd);
 
 #endif // _PROPELLER_COMPILER_H_
 

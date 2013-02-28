@@ -231,12 +231,14 @@ const char* Compile2()
     return 0;
 }
 
-bool GetErrorInfo(int& lineNumber, int& column)
+bool GetErrorInfo(int& lineNumber, int& column, int& offsetToStartOfLine, int& offsetToEndOfLine, int& offendingItemStart, int& offendingItemEnd)
 {
     if (g_pCompilerData && g_pCompilerData->error)
     {
-        lineNumber = g_pElementizer->GetCurrentLineNumber();
+        lineNumber = g_pElementizer->GetCurrentLineNumber(offsetToStartOfLine, offsetToEndOfLine);
         column = g_pElementizer->GetColumn();
+        offendingItemStart = g_pCompilerData->source_start;
+        offendingItemEnd = g_pCompilerData->source_finish;
         return true;
     }
 
