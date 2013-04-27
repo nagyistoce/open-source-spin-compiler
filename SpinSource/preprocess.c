@@ -714,11 +714,18 @@ do_line(struct preprocess *pp)
     char *func;
     int r;
 
-    if (data[0] != '#' || pp->incomment) {
+    // skip over utf-8 BOM character
+    int dataOffset = 0;
+    if (data[0] == -17 && data[1] == -69 && data[2] == -65)
+    {
+        dataOffset = 3;
+    }
+
+    if (data[dataOffset] != '#' || pp->incomment) {
         r = expand_macros(pp, &pp->line, data);
     } else {
         ParseState P;
-        parse_init(&P, data+1);
+        parse_init(&P, data+1+dataOffset);
         parse_skipspaces(&P);
         func = parse_getword(&P);
         r = 0;

@@ -657,7 +657,6 @@ int Elementizer::GetCurrentLineNumber(int &offsetToStartOfLine, int& offsetToEnd
     {
         if (pSource[scanEnd] == 13 || pSource[scanEnd] == 0)
         {
-            scanEnd--;
             break;
         }
         scanEnd++;
