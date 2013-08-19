@@ -496,7 +496,7 @@ bool CompileDatBlocks_AsmInstruction(bool& bEof, int pass, bool bSymbol, bool bR
                     return false;
                 }
             }
-            instruction |= ((g_pElementizer->GetValue2() & 0x1FF) >> 2); // set #label
+            instruction |= ((g_pElementizer->GetValue2() & 0x7FF) >> 2); // set #label
 
             pSymbol[length] = '_';
             pSymbol[length+1] = 'R';
@@ -510,7 +510,7 @@ bool CompileDatBlocks_AsmInstruction(bool& bEof, int pass, bool bSymbol, bool bR
                     return false;
                 }
             }
-            instruction |= (((g_pElementizer->GetValue2() & 0x1FF) >> 2) << 9); // set label_ret
+            instruction |= (((g_pElementizer->GetValue2() & 0x7FF) >> 2) << 9); // set label_ret
         }
         else
         {
