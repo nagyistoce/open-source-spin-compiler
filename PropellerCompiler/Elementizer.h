@@ -30,6 +30,7 @@ class Elementizer
     SymbolTableEntry*       m_pSymbolEntry;
     int                     m_type;
     int                     m_value;
+    int                     m_value_2;
     int                     m_opType;
     int                     m_asm;
     bool                    m_dual;
@@ -81,6 +82,7 @@ public:
 
     int     GetType() { return m_type; }        // symbol's type
     int     GetValue() { return m_value; }      // only valid if m_type != type_undefined
+    int     GetValue2() { return m_value_2; }   // only valid if m_type != type_undefined
     int     GetOpType() { return m_opType; }    // only valid for operator symbols
     int     GetAsm() { return m_asm; }          // only valid for dual symbols + op_log_and & op_log_or
     bool    IsDual() { return m_dual; }         // true if is a dual symbol

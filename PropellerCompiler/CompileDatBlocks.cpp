@@ -32,14 +32,16 @@ void CompileDatBlocks_EnterInfo(int datstart, int objstart)
 
 void CompileDatBlocks_EnterSymbol(bool bResSymbol, int size)
 {
-    int value = (g_pCompilerData->obj_ptr & 0x0000FFFF) | (g_pCompilerData->cog_org << 16);
-    g_pCompilerData->inf_data0 = value;
+    int value_1 = g_pCompilerData->obj_ptr;
+    int value_2 = g_pCompilerData->cog_org;
+    g_pCompilerData->inf_data0 = value_1;
+    g_pCompilerData->inf_data2 = value_2;
     g_pCompilerData->inf_data1 = size;
     g_pCompilerData->inf_type = info_dat_symbol;
     EnterInfo();
-    g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, bResSymbol ? type_dat_long_res : (size == 0 ? type_dat_byte : (size == 1 ? type_dat_word : type_dat_long)), value);
+    g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, bResSymbol ? type_dat_long_res : (size == 0 ? type_dat_byte : (size == 1 ? type_dat_word : type_dat_long)), value_1, value_2);
 #ifdef RPE_DEBUG
-    printf("dat: %s %08X (%d)\n", g_pCompilerData->symbolBackup, value, size);
+    printf("dat: %s %08X %08X (%d)\n", g_pCompilerData->symbolBackup, value_1, value_2, size);
 #endif
 }
 
@@ -393,8 +395,8 @@ bool CompileDatBlocks_ValidateCallSymbol(bool bIsRet, char* pSymbol)
         return false;
     }
 
-    // the offset to the label symbol is in the upper 16bits of the symbol value
-    int value = g_pElementizer->GetValue() >> 16;
+    // the offset to the label symbol is in second symbol value
+    int value = g_pElementizer->GetValue2();
 
     // make sure it's long aligned
     if (value & 0x03)
@@ -494,7 +496,7 @@ bool CompileDatBlocks_AsmInstruction(bool& bEof, int pass, bool bSymbol, bool bR
                     return false;
                 }
             }
-            instruction |= (g_pElementizer->GetValue() >> 18); // set #label
+            instruction |= ((g_pElementizer->GetValue2() & 0x1FF) >> 2); // set #label
 
             pSymbol[length] = '_';
             pSymbol[length+1] = 'R';
@@ -508,7 +510,7 @@ bool CompileDatBlocks_AsmInstruction(bool& bEof, int pass, bool bSymbol, bool bR
                     return false;
                 }
             }
-            instruction |= ((g_pElementizer->GetValue() >> 18) << 9); // set label_ret
+            instruction |= (((g_pElementizer->GetValue2() & 0x1FF) >> 2) << 9); // set label_ret
         }
         else
         {

@@ -55,7 +55,7 @@ bool PrintString(const char* theString)
     return result;
 }
 
-bool PrintSymbol(const char* pSymbolName, unsigned char type, int value)
+bool PrintSymbol(const char* pSymbolName, unsigned char type, int value, int value_2)
 {
     char tempStr[64];
     sprintf(tempStr, "TYPE: %02X", type);
@@ -63,7 +63,7 @@ bool PrintSymbol(const char* pSymbolName, unsigned char type, int value)
     {
         return false;
     }
-    sprintf(tempStr, "   VALUE: %08X", value);
+    sprintf(tempStr, "   VALUE: %08X (%08x)", value, value_2);
     if (!PrintString(tempStr))
     {
         return false;
@@ -249,14 +249,14 @@ bool CheckLocal(bool& bLocal)
             return false;
         }
 
-        short temp = g_pCompilerData->asm_local;
-        temp += 0x0101;   //(last two characters range from 01h-20h)
+        int temp = g_pCompilerData->asm_local;
+        temp += 0x01010101;   //(last four characters range from 01h-20h)
 
-        //append above two bytes to the symbol name
+        //append above four bytes to the symbol name
         char* pSymbol = g_pElementizer->GetCurrentSymbol();
         pSymbol += strlen(pSymbol);
-        *((short*)pSymbol) = temp;
-        pSymbol += 2;
+        *((int*)pSymbol) = temp;
+        pSymbol += 4;
         *pSymbol = 0;
 
         // re-get the symbol (point to the beginning of it)
@@ -591,12 +591,21 @@ bool IncrementAsmLocal()
         (*(pAsmLocal+1))&=0x1F;
         if ((*(pAsmLocal+1)) == 0)
         {
-            g_pCompilerData->error = true;
-            g_pCompilerData->error_msg = g_pErrorStrings[error_loxdse];
-            return false;
+            (*(pAsmLocal+2))++;
+            (*(pAsmLocal+2))&=0x1F;
+            if ((*(pAsmLocal+2)) == 0)
+            {
+                (*(pAsmLocal+3))++;
+                (*(pAsmLocal+3))&=0x1F;
+                if ((*(pAsmLocal+3)) == 0)
+                {
+                    g_pCompilerData->error = true;
+                    g_pCompilerData->error_msg = g_pErrorStrings[error_loxdse];
+                    return false;
+                }
+            }
         }
     }
-
     return true;
 }
 

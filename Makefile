@@ -1,17 +1,17 @@
 CC=gcc
 CXX=g++
-CFLAGS+=-DGCC -Wall -g
+CFLAGS+=-DGCC -Wall -g -static
 
 
-NAME=spin
-TARGET=spin
+NAME=openspin
+TARGET=openspin
 MAIN=SpinSource/$(TARGET)
 FLEXBUF=SpinSource/flexbuf
 PREPROC=SpinSource/preprocess
 MAINOBJ=$(MAIN).o $(FLEXBUF).o $(PREPROC).o
 MAINSRC=$(MAIN).cpp $(FLEXBUF).c $(PREPROC).c
 LIBDIR=PropellerCompiler
-LIBNAME=$(LIBDIR)/libspin.a
+LIBNAME=$(LIBDIR)/libopenspin.a
 
 
 all: $(LIBNAME) Makefile

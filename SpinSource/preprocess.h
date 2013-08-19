@@ -30,6 +30,7 @@ struct filestate {
 struct ifstate {
     struct ifstate *next;
     int skip;      /* if we are currently skipping code */
+    const char *name; /* the name of the file it started in */
     int linenum;   /* the line number it started on */
     int skiprest;  /* if we have already processed some branch */
     int sawelse;  /* if we have already processed a #else */
@@ -60,12 +61,16 @@ struct preprocess {
     int  numerrors;
 
     int  in_error; /* flag to help the default error handling function */
+
+    bool alternate; /* flag to enable alternate preprocessor rules -  */
+                    /* affects #error handling, macro substitution of */
+                    /* symbols that are "defined" but have no value.  */
 };
 
 #define pp_active(pp) (!((pp)->ifs && (pp)->ifs->skip))
 
 /* initialize for reading */
-void pp_init(struct preprocess *pp);
+void pp_init(struct preprocess *pp, bool alternate);
 
 /* push an opened FILE struct */
 void pp_push_file_struct(struct preprocess *pp, FILE *f, const char *name);

@@ -501,7 +501,7 @@ bool CheckConstant(bool& bConstant)
         }
         if (CheckDat())
         {
-            g_pCompilerData->intermediateResult = g_pElementizer->GetValue() & 0x0000FFFF;
+            g_pCompilerData->intermediateResult = g_pElementizer->GetValue();
             return true;
         }
         bool bUndefined = false;
@@ -539,8 +539,8 @@ bool CheckConstant(bool& bConstant)
         }
         if (g_pCompilerData->bOperandMode)
         {
-            // use org address in high word
-            g_pCompilerData->intermediateResult = g_pElementizer->GetValue() >> 16;
+            // use org address in value 2
+            g_pCompilerData->intermediateResult = g_pElementizer->GetValue2();
 
             // check for valid long address
             if ((g_pCompilerData->intermediateResult & 0x03) != 0)
@@ -564,7 +564,6 @@ bool CheckConstant(bool& bConstant)
         {
             g_pCompilerData->intermediateResult = g_pElementizer->GetValue();
         }
-        g_pCompilerData->intermediateResult &= 0x0000FFFF;
         return true;
     }
 

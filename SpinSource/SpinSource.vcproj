@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="spin"
+	Name="openspin"
 	ProjectGUID="{A52778A6-7ABC-4FC5-B238-A6337AB2CC1F}"
 	RootNamespace="spin"
 	Keyword="Win32Proj"
@@ -192,6 +192,10 @@
 			>
 		</File>
 		<File
+			RelativePath=".\openspin.cpp"
+			>
+		</File>
+		<File
 			RelativePath=".\preprocess.c"
 			>
 			<FileConfiguration
@@ -213,10 +217,6 @@
 		</File>
 		<File
 			RelativePath=".\preprocess.h"
-			>
-		</File>
-		<File
-			RelativePath=".\spin.cpp"
 			>
 		</File>
 	</Files>

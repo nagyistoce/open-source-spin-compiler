@@ -25,12 +25,12 @@
 #define language_version    '0'
 #define loc_limit           0x8000
 #define var_limit           0x8000
-#define obj_limit           0x0000F000
+#define obj_limit           0x1000000 // was 0x0000F000
 #define file_limit          32
 #define data_limit          0x10000
 #define info_limit          1000
 #define distiller_limit     0x4000
-#define symbol_limit        32
+#define symbol_limit        256 // was 32 
 #define symbol_table_limit  0x8000
 #define pubcon_list_limit   0x2000
 #define block_nest_limit    8
@@ -46,7 +46,7 @@ enum infoType
     info_con = 0,       // data0 = value (must be followed by info_con_float)
     info_con_float,     // data0 = value
     info_dat,           // data0/1 = obj start/finish
-    info_dat_symbol,    // data0 = offset, data1 = size
+    info_dat_symbol,    // data0 = value, data2 = offset, data1 = size
     info_pub,           // data0/1 = obj start/finish, data2/3 = name start/finish
     info_pri            // data0/1 = obj start/finish, data2/3 = name start/finish
 };
@@ -106,9 +106,9 @@ struct CompilerData
     int             info_start[info_limit];         // Start of source related to this info
     int             info_finish[info_limit];        // End (+1) of source related to this info
     int             info_type[info_limit];          // 0 = CON, 1 CON(float), 2 = DAT, 3 = DAT Symbol, 4 = PUB, 5 = PRI
-    int             info_data0[info_limit];         // Info field 0: if CON = Value, if DAT/PUB/PRI = Start addr in object, if DAT Symbol = offset (in cog)
+    int             info_data0[info_limit];         // Info field 0: if CON = Value, if DAT/PUB/PRI = Start addr in object, if DAT Symbol = value
     int             info_data1[info_limit];         // Info field 1: if DAT/PUB/PRI = End+1 addr in object, if DAT Symbol = size
-    int             info_data2[info_limit];         // Info field 2: if PUB/PRI = Start of name in source
+    int             info_data2[info_limit];         // Info field 2: if PUB/PRI = Start of name in source, if DAT Symbol = offset (in cog)
     int             info_data3[info_limit];         // Info field 3: if PUB/PRI = End+1 of name in source
 
     int             distilled_longs;                // Total longs optimized out of object
@@ -120,6 +120,15 @@ struct CompilerData
     int             debugbaud;                      // 0 = no debug, > 0 = debug at DebugBaud rate
 
     bool            bDATonly;                       // only compile DAT sections (into obj)
+
+    // only add new stuff below here
+
+    bool            bBinary;                        // true for binary, false for eeprom
+
+    unsigned int    eeprom_size;                    // size of eeprom
+    unsigned int    vsize;                          // used to hold last vsize (in case it is greater than 65536)
+    unsigned int    psize;                          // used to hold last psize (in case it is greater than 65536)
+
 };
 
 // public functions

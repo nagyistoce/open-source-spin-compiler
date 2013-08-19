@@ -26,6 +26,7 @@ void Elementizer::SetFromSymbolEntry()
     {
         m_type = m_pSymbolEntry->m_data.type;
         m_value = m_pSymbolEntry->m_data.value;
+        m_value_2 = m_pSymbolEntry->m_data.value_2;
         if (m_pSymbolEntry->m_data.dual)
         {
             m_dual = true;
@@ -51,6 +52,7 @@ void Elementizer::SetFromSymbolEntry()
     {
         m_type = 0;
         m_value = 0;
+        m_value_2 = 0;
         m_asm = -1;
         m_opType = -1;
     }
@@ -76,6 +78,7 @@ bool Elementizer::GetNext(bool& bEof)
     // default to type_undefined
     m_type = 0;
     m_value = 0;
+    m_value_2 = 0;
     m_asm = -1;
     m_opType = -1;
     m_pSymbolEntry = 0;
@@ -115,8 +118,8 @@ bool Elementizer::GetNext(bool& bEof)
                 char nextChar = pSource[m_sourceOffset];
                 bool bNextCharDigit = CheckDigit(nextChar, notUsed, (char)constantBase);
 
-                if (constantBase == 10 &&
-                    (currentChar == '.' && bNextCharDigit) ||
+                if ((constantBase == 10 &&
+                    (currentChar == '.' && bNextCharDigit)) ||
                     currentChar == 'e' || currentChar == 'E')
                 {
                     // handle float
@@ -694,6 +697,7 @@ bool Elementizer::SubToNeg()
         m_type = type_unary;
         m_opType = op_neg;
         m_value = 0;
+        m_value_2 = 0;
         return true;
     }
 

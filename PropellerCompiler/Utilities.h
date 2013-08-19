@@ -21,7 +21,7 @@ extern bool PrintWord(short value);
 extern bool PrintByte(char value);
 extern bool PrintHex(char value);
 extern bool PrintDecimal(int value);
-extern bool PrintSymbol(const char* pSymbolName, unsigned char type, int value);
+extern bool PrintSymbol(const char* pSymbolName, unsigned char type, int value, int value_2);
 extern bool PrintObj();
 extern bool DocPrint(char theChar);
 

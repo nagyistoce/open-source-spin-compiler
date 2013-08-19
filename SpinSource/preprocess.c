@@ -22,7 +22,7 @@
  *   struct preprocess pp;
  *   char *parser_str;
  *
- *   pp_init(&pp);
+ *   pp_init(&pp, false);
  *   pp_define(&pp, "VALUE1", "VALUE");
  *   pp_define(&pp, "VALUE2", "0");
  *   pp_push_file(&pp, "foo.txt");
@@ -40,6 +40,31 @@
 
 #ifdef _MSC_VER
 #define strdup _strdup
+#endif
+
+
+struct PathEntry
+{
+    PathEntry *next;
+    char path[1];
+};
+
+#if TEST
+#define PATH_MAX 256
+#if defined(WIN32)
+#define DIR_SEP     '\\'
+#define DIR_SEP_STR "\\"
+#else
+#define DIR_SEP     '/'
+#define DIR_SEP_STR "/"
+#endif
+static PathEntry *path;
+static PathEntry **pNextPathEntry = &path;
+static const char *MakePath(PathEntry *entry, const char *name);
+#else
+extern PathEntry *path;
+extern PathEntry **pNextPathEntry;
+extern const char *MakePath(PathEntry *entry, const char *name);
 #endif
 
 /*
@@ -236,7 +261,7 @@ dowarning(struct preprocess *pp, const char *msg, ...)
  * initialize preprocessor
  */
 void
-pp_init(struct preprocess *pp)
+pp_init(struct preprocess *pp, bool alternate)
 {
     memset(pp, 0, sizeof(*pp));
     flexbuf_init(&pp->line, 128);
@@ -246,6 +271,7 @@ pp_init(struct preprocess *pp)
     pp->warnfunc = default_errfunc;
     pp->errarg = (void *)"error";
     pp->warnarg = (void *)"warning";
+    pp->alternate = alternate;
 }
 
 /*
@@ -279,6 +305,17 @@ pp_push_file(struct preprocess *pp, const char *name)
 
     f = fopen(name, "rb");
     if (!f) {
+       // try opening file using path
+        for (PathEntry* entry = path; entry != NULL; entry = entry->next)
+        {
+            f = fopen(MakePath(entry, name), "rb");
+            if (f != NULL)
+            {
+                break;
+            }
+        }
+    }
+    if (!f) {
         doerror(pp, "Unable to open file %s", name);
         return;
     }
@@ -293,13 +330,28 @@ pp_push_file(struct preprocess *pp, const char *name)
 void pp_pop_file(struct preprocess *pp)
 {
     struct filestate *A;
-    struct ifstate *I;
+    struct ifstate *I, *PI;
 
-    while (pp->ifs) {
-        I = pp->ifs;
-        pp->ifs = I->next;
-        doerror(pp, "Unterminated #if starting at line %d", I->linenum);
-        free(I);
+    PI = NULL;
+    I = pp->ifs;
+    while (I) {
+        if (strcmp(pp->fil->name, I->name) == 0) {
+           doerror(pp, "Unterminated #if starting at line %d", I->linenum);
+           if (PI == NULL) {
+              pp->ifs = I->next;
+              free(I);
+              I = pp->ifs;
+           }
+           else {
+              PI->next = I->next;
+              free(I);
+              I = PI->next;
+           }
+        }
+        else {
+           PI = I;
+           I = I->next;
+        }
     }
     A = pp->fil;
     if (A) {
@@ -405,10 +457,25 @@ static char *parse_getword(ParseState *P)
     }
     word = ptr;
     if (!*ptr) return ptr;
+    if (*ptr == '\"') {
+       ptr++;
+       while (*ptr && (*ptr != '\"')) {
+          ptr++;
+       }
+       if (*ptr == '\"') {
+          ptr++;
+       }
+       P->save = ptr;
+       P->c = *ptr;
+       *ptr = 0;
+       return word;
+    }
     state = classify_char((unsigned char)*ptr);
     ptr++;
-    while (*ptr && classify_char((unsigned char)*ptr) == state)
-        ptr++;
+    if (state != PARSE_OTHER) {
+       while (*ptr && classify_char((unsigned char)*ptr) == state)
+           ptr++;
+    }
 
     P->save = ptr;
     P->c = *ptr;
@@ -516,8 +583,12 @@ expand_macros(struct preprocess *pp, struct flexbuf *dst, char *src)
             def = word;
         } else if (isalpha((unsigned char)*word)) {
             def = pp_getdef(pp, word);
-            if (!def)
+            if (!def) {
                 def = word;
+            }
+            else if (pp->alternate && (strlen(def) == 0)) {
+                def = word;
+            }
         } else {
             if (pp->startcomment && strstr(word, pp->startcomment)) {
                 pp->incomment++;
@@ -545,14 +616,22 @@ handle_ifdef(struct preprocess *pp, ParseState *P, int invert)
     }
     I->next = pp->ifs;
     if (pp->fil) {
+        I->name = strdup(pp->fil->name);
         I->linenum = pp->fil->lineno;
     }
-    pp->ifs = I;
+
     if (!pp_active(pp)) {
         I->skip = 1;
         I->skiprest = 1;  /* skip all branches, even else */
+        pp->ifs = I;
         return;
     }
+    else {
+        I->skip = 0;
+        I->skiprest = 0;
+        pp->ifs = I;
+    }
+    
     word = parse_getwordafterspaces(P);
     def = pp_getdef(pp, word);
     if (invert ^ (def != NULL)) {
@@ -642,6 +721,9 @@ handle_error(struct preprocess *pp, ParseState *P)
     }
     msg = parse_restofline(P);
     doerror(pp, "#error: %s", msg);
+    if (pp->alternate) {
+       exit(1);
+    }
 }
 
 static void
@@ -842,7 +924,7 @@ pp_restore_define_state(struct preprocess *pp, void *vp)
 
 #ifdef TEST
 char *
-preprocess(const char *filename)
+preprocess(const char *filename, bool alternate)
 {
     struct preprocess pp;
     FILE *f;
@@ -853,25 +935,102 @@ preprocess(const char *filename)
         perror(filename);
         return NULL;
     }
-    pp_init(&pp);
-    pp_push_file_struct(&pp, f);
+    pp_init(&pp, alternate);
+    pp_push_file_struct(&pp, f, filename);
     pp_run(&pp);
     result = pp_finish(&pp);
     fclose(f);
     return result;
 }
 
+const char *MakePath(PathEntry *entry, const char *name)
+{
+    static char fullpath[PATH_MAX];
+    sprintf(fullpath, "%s%c%s", entry->path, DIR_SEP, name);
+    return fullpath;
+}
+
+bool AddPath(const char *path)
+{
+    PathEntry* entry = (PathEntry*)new char[(sizeof(PathEntry) + strlen(path))];
+    if (!(entry))
+    {
+        return false;
+    }
+    strcpy(entry->path, path);
+    *pNextPathEntry = entry;
+    pNextPathEntry = &entry->next;
+    entry->next = NULL;
+    return true;
+}
+
+/* Usage - display a usage message and exit */
+static void Usage(void)
+{
+    fprintf(stderr, "Propeller Preprocessor (c)2012 Parallax Inc. DBA Parallax Semiconductor.\n");
+    fprintf(stderr, "\
+usage: spin\n\
+         [ -I <path> ]     add a directory to the include path\n\
+         [ -d ]            use alternate preprocessing rules\n\
+         <name.spin>       spin file to preprocess\n\
+\n");
+}
+
 int
 main(int argc, char **argv)
 {
     char *str;
-    if (argc != 2) {
-        fprintf(stderr, "usage: %s file\n", argv[0]);
-        return 2;
+    char* p = NULL;
+    char* infile = NULL;
+    bool  alternate;
+
+    // get the arguments
+    for(int i = 1; i < argc; i++)
+    {
+        // handle switches
+        if(argv[i][0] == '-')
+        {
+            switch(argv[i][1])
+            {
+            case 'I':
+                if(argv[i][2])
+                {
+                    p = &argv[i][2];
+                }
+                else if(++i < argc)
+                {
+                    p = argv[i];
+                }
+                else
+                {
+                    Usage();
+                    return 1;
+                }
+                AddPath(p);
+                break;
+
+            case 'h':
+                alternate = 1;
+
+            default:
+                Usage();
+                return 1;
+                break;
+            }
+        }
+        else // handle the input filename
+        {
+            if (infile)
+            {
+                Usage();
+                return 1;
+            }
+            infile = argv[i];
+        }
     }
-    str = preprocess(argv[1]);
+    str = preprocess(infile, alternate);
     if (!str) {
-        fprintf(stderr, "error reading file %s\n", argv[1]);
+        fprintf(stderr, "error reading file %s\n", infile);
         return 1;
     } else {
         printf("%s", str);

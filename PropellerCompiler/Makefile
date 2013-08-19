@@ -1,10 +1,10 @@
 CC=gcc
 CXX=g++
-CFLAGS+=-DGCC -Wall
+CFLAGS+=-DGCC -Wall -g -static
 CXXFLAGS += $(CFLAGS)
 
 
-LIBNAME=libspin.a
+LIBNAME=libopenspin.a
 SRCDIR=.
 OBJ=$(SRCDIR)/BlockNestStackRoutines.o \
 	$(SRCDIR)/CompileDatBlocks.o \

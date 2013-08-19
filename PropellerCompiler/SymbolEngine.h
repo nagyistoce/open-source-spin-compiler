@@ -193,6 +193,7 @@ struct SymbolTableEntryData
 {
     symbolType      type;                   // what type of symbol is it?
     int             value;                  // value is type dependant
+    int             value_2;                // value 2 is type dependant
     char*           name;                   // the string of the symbol
     unsigned char   operator_type_or_asm;   // operator type for op symbols, or asm value for dual symbols
     bool            dual;                   // indicates that this symbol is used by both PASM and spin
@@ -225,7 +226,7 @@ public:
 
     SymbolTableEntry* FindSymbol(const char* pSymbolName);
 
-    void AddSymbol(const char* pSymbolName, symbolType type, int value, bool bTemp = false);
+    void AddSymbol(const char* pSymbolName, symbolType type, int value, int value_2 = 0, bool bTemp = false);
     void Reset(bool bTempsOnly = false);
 };
 

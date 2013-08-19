@@ -303,6 +303,7 @@ SymbolTableEntry::SymbolTableEntry(const SymbolTableEntryDataTable& data)
 {
     m_data.type = data.type;
     m_data.value = data.value;
+    m_data.value_2 = 0;
     int nameLength = strlen(data.name)+1;
     m_data.name = new char[nameLength];
     strcpy(m_data.name, data.name);
@@ -384,9 +385,9 @@ SymbolTableEntry* SymbolEngine::FindSymbol(const char* pSymbolName)
     return 0;
 }
 
-void SymbolEngine::AddSymbol(const char* pSymbolName, symbolType type, int value, bool bTemp)
+void SymbolEngine::AddSymbol(const char* pSymbolName, symbolType type, int value, int value_2, bool bTemp)
 {
-    PrintSymbol(pSymbolName, (unsigned char)type, value);
+    PrintSymbol(pSymbolName, (unsigned char)type, value, value_2);
 
     SymbolTableEntry* pSymbol = new SymbolTableEntry;
     int nameLength = strlen(pSymbolName)+1;
@@ -394,6 +395,7 @@ void SymbolEngine::AddSymbol(const char* pSymbolName, symbolType type, int value
     strcpy(pSymbol->m_data.name, pSymbolName);
     pSymbol->m_data.type = type;
     pSymbol->m_data.value = value;
+    pSymbol->m_data.value_2 = value_2;
     pSymbol->m_data.dual = false;
     pSymbol->m_data.operator_type_or_asm = 0;
 

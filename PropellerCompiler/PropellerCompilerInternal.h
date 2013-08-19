@@ -27,7 +27,7 @@ struct CompilerDataInternal : public CompilerData
     int             obj_start;
     int             obj_count;
 
-    short           asm_local;
+    int             asm_local;
 
     unsigned char   pubcon_list[pubcon_list_limit];
     int             pubcon_list_size;
@@ -48,9 +48,9 @@ struct CompilerDataInternal : public CompilerData
     int             inf_start;         // Start of source related to this info
     int             inf_finish;        // End (+1) of source related to this info
     int             inf_type;          // 0 = CON, 1 CON(float), 2 = DAT, 3 = DAT Symbol, 4 = PUB, 5 = PRI
-    int             inf_data0;         // Info field 0: if CON = Value, if DAT/PUB/PRI = Start addr in object, if DAT Symbol = offset (in cog)
+    int             inf_data0;         // Info field 0: if CON = Value, if DAT/PUB/PRI = Start addr in object, if DAT Symbol = value
     int             inf_data1;         // Info field 1: if DAT/PUB/PRI = End+1 addr in object, if DAT Symbol = size
-    int             inf_data2;         // Info field 2: if PUB/PRI = Start of name in source
+    int             inf_data2;         // Info field 2: if PUB/PRI = Start of name in source, if DAT Symbol = offset (in cog)
     int             inf_data3;         // Info field 3: if PUB/PRI = End+1 of name in source
 
     // used by GetFileName/AddFileName

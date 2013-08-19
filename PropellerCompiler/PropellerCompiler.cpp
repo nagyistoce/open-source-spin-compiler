@@ -1136,7 +1136,7 @@ bool CompileSubBlocks_Compile(int blockType, int &subCount)
                         {
                             g_pElementizer->BackupSymbol();
 
-                            g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, type_loc_long, locals, true); // add to temp symbols
+                            g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, type_loc_long, locals, 0, true); // add to temp symbols
 #ifdef RPE_DEBUG
                             printf("temp loc: %s %d\n", g_pCompilerData->symbolBackup, locals);
 #endif
@@ -1187,7 +1187,7 @@ bool CompileSubBlocks_Compile(int blockType, int &subCount)
                         // if we result symbol then add it to temp symbols
                         // we don't increment locals, because result local is already accounted for
                         g_pElementizer->BackupSymbol();
-                        g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, type_loc_long, 0, true);
+                        g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, type_loc_long, 0, 0, true);
 #ifdef RPE_DEBUG
                         printf("result: %s %d\n", g_pCompilerData->symbolBackup, 0);
 #endif
@@ -1235,7 +1235,7 @@ bool CompileSubBlocks_Compile(int blockType, int &subCount)
                                 }
                             }
 
-                            g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, type_loc_long, locals, true); // add to temp symbols
+                            g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, type_loc_long, locals, 0, true); // add to temp symbols
 #ifdef RPE_DEBUG
                             if (sizeOfThisLocal > 4)
                             {
@@ -1412,7 +1412,11 @@ bool DistillObjBlocks()
 {
     if (g_pCompilerData->compile_mode == 0)
     {
-        return DistillObjects();
+       // Cannot "distill" programs that go over 64k boundary
+       if (g_pCompilerData->obj_ptr <= 65536)
+       {
+           return DistillObjects();
+       }
     }
     return true;
 }
@@ -1421,7 +1425,9 @@ bool CompileFinal()
 {
     if (g_pCompilerData->compile_mode == 0)
     {
-        int vsize_psize = (g_pCompilerData->obj_ptr << 16) | g_pCompilerData->var_ptr;
+        int vsize = g_pCompilerData->var_ptr;
+        int psize = g_pCompilerData->obj_ptr;
+        int vsize_psize = (psize << 16) | vsize;
         int checksum_offset = g_pCompilerData->obj_ptr;
         if (!EnterObj(0)) //placeholder for checksum;
         {
@@ -1446,6 +1452,9 @@ bool CompileFinal()
         memmove(&(g_pCompilerData->obj[4]), &(g_pCompilerData->obj[0]), obj_limit - 4);
         // insert vsize_psize at beginning on obj
         *((int*)(&g_pCompilerData->obj[0])) = vsize_psize;
+        // also store them separately in case they are larger than 65536
+        g_pCompilerData->vsize = vsize;
+        g_pCompilerData->psize = psize;
 
         // calculate the checksum
         unsigned char checksum = 0;

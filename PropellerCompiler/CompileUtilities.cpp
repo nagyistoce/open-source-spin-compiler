@@ -127,7 +127,7 @@ bool CheckVariable_AddressExpression(int& expSourcePtr)
 
 bool CheckVariable(bool& bVariable, unsigned char& type, unsigned char& size, int& address, int& indexSourcePtr)
 {
-    address = g_pElementizer->GetValue() & 0x0000FFFF;
+    address = g_pElementizer->GetValue();
     indexSourcePtr = 0;
 
     unsigned char varType = (unsigned char)(g_pElementizer->GetType() & 0xFF);
