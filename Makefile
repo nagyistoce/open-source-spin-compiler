@@ -1,6 +1,11 @@
+OS:=$(shell uname)
 CC=gcc
 CXX=g++
-CFLAGS+=-DGCC -Wall -g -static
+ifeq ($(OS),Darwin)
+	CFLAGS+=-DGCC -Wall -g
+else
+	CFLAGS+=-DGCC -Wall -g -static
+endif
 
 
 NAME=openspin
