@@ -10,24 +10,17 @@
 // openspin.cpp
 //
 
-//
-// define USE_PREPROCESSOR to enable the preprocessor
-//
-#define USE_PREPROCESSOR
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "../PropellerCompiler/PropellerCompiler.h"
 
-#ifdef USE_PREPROCESSOR
 #include "preprocess.h"
 
 struct preprocess preproc;
 bool s_bPreprocess = false;
 bool s_bAlternate  = false;
-#endif
 
 #define DataLimitStr        "64k"
 #define ImageLimit          32768   // Max size of Propeller Application image file
@@ -51,7 +44,7 @@ int     s_nObjStackPtr = 0;
 
 CompilerData* s_pCompilerData = NULL;
 
-bool CompileRecursively(char* pFilename, bool bQuiet);
+bool CompileRecursively(char* pFilename, bool bQuiet, bool bFileTreeOutputOnly);
 void ComposeRAM(unsigned char** ppBuffer, int& bufferSize, bool bDATonly, bool bBinary, unsigned int eeprom_size);
 
 //
@@ -163,40 +156,24 @@ static void Banner(void)
 static void Usage(void)
 {
     Banner();
-#ifdef USE_PREPROCESSOR
     fprintf(stderr, "\
 usage: openspin\n\
-         [ -h ]            display this help\n\
-         [ -I <path> ]     add a directory to the include path\n\
-         [ -o <path> ]     output filename\n\
-         [ -b ]            output binary file format\n\
-         [ -c ]            output only DAT sections\n\
-         [ -d ]            dump out doc mode\n\
-         [ -e ]            output eeprom file format\n\
-         [ -q ]            quiet mode (suppress banner and non-error text)\n\
-         [ -v ]            verbose output\n\
-         [ -p ]            use preprocessor\n\
-         [ -a ]            use alternative preprocessor rules\n\
-         [ -D <define> ]   add a define (must have -p before any of these)\n\
-         [ -M <size> ]     size of eeprom (up to 16777216 bytes)\n\
-         <name.spin>       spin file to compile\n\
+         [ -h ]                 display this help\n\
+         [ -L or -I <path> ]    add a directory to the include path\n\
+         [ -o <path> ]          output filename\n\
+         [ -b ]                 output binary file format\n\
+         [ -e ]                 output eeprom file format\n\
+         [ -c ]                 output only DAT sections\n\
+         [ -d ]                 dump out doc mode\n\
+         [ -t ]                 output just the object file tree (forces quiet mode, and doesn't output a file)\n\
+         [ -q ]                 quiet mode (suppress banner and non-error text)\n\
+         [ -v ]                 verbose output\n\
+         [ -p ]                 disable the preprocessor\n\
+         [ -a ]                 use alternative preprocessor rules\n\
+         [ -D <define> ]        add a define (must have -p before any of these)\n\
+         [ -M <size> ]          size of eeprom (up to 16777216 bytes)\n\
+         <name.spin>            spin file to compile\n\
 \n");
-#else
-    fprintf(stderr, "\
-usage: openspin\n\
-         [ -h ]            display this help\n\
-         [ -I <path> ]     add a directory to the include path\n\
-         [ -o <path> ]     output filename\n\
-         [ -b ]            output binary file format\n\
-         [ -c ]            output only DAT sections\n\
-         [ -d ]            dump out doc mode\n\
-         [ -e ]            output eeprom file format\n\
-         [ -q ]            quiet mode (suppress banner and non-error text)\n\
-         [ -v ]            verbose output\n\
-         [ -M <size> ]     size of eeprom (up to 16777216 bytes)\n\
-         <name.spin>       spin file to compile\n\
-\n");
-#endif
 }
 
 int main(int argc, char* argv[])
@@ -210,7 +187,8 @@ int main(int argc, char* argv[])
     bool bDATonly = false;
     bool bBinary  = true;
     unsigned int  eeprom_size = 32768;
-    s_bPreprocess = false;
+    s_bPreprocess = true;
+    bool bFileTreeOutputOnly = false;
 
     // get the arguments
     for(int i = 1; i < argc; i++)
@@ -221,6 +199,7 @@ int main(int argc, char* argv[])
             switch(argv[i][1])
             {
             case 'I':
+            case 'L':
                 if(argv[i][2])
                 {
                     p = &argv[i][2];
@@ -275,9 +254,8 @@ int main(int argc, char* argv[])
                 }
                 break;
 
-#ifdef USE_PREPROCESSOR
             case 'p':
-                s_bPreprocess = true;
+                s_bPreprocess = false;
                 break;
 
             case 'a':
@@ -308,7 +286,11 @@ int main(int argc, char* argv[])
                     return 1;
                 }
                 break;
-#endif
+
+            case 't':
+                bFileTreeOutputOnly = true;
+                break;
+
             case 'b':
                 bBinary = true;
                 break;
@@ -351,7 +333,11 @@ int main(int argc, char* argv[])
         }
     }
 
-#ifdef USE_PREPROCESSOR
+    if (bFileTreeOutputOnly)
+    {
+        bQuiet = true;
+    }
+
     if (s_bPreprocess)
     {
         pp_init(&preproc, s_bAlternate);
@@ -372,7 +358,6 @@ int main(int argc, char* argv[])
         pp_setcomments(&preproc, "\'", "{", "}");
 
     }
-#endif
 
     // must have input file
     if (!infile)
@@ -422,7 +407,12 @@ int main(int argc, char* argv[])
     if (!bQuiet)
     {
         Banner();
-        printf("Compiling %s...\n", infile);
+        printf("Compiling...\n%s\n", infile);
+    }
+
+    if (bFileTreeOutputOnly)
+    {
+        printf("%s\n", infile);
     }
 
     s_pCompilerData = InitStruct();
@@ -448,7 +438,7 @@ int main(int argc, char* argv[])
         *pExtension = 0;
     }
 
-    if (!CompileRecursively(infile, bQuiet && !s_bPreprocess))
+    if (!CompileRecursively(infile, bQuiet, bFileTreeOutputOnly))
     {
         return 1;
     }
@@ -458,27 +448,25 @@ int main(int argc, char* argv[])
         printf("Done.\n");
     }
 
-    unsigned char* pBuffer = NULL;
-    int bufferSize = 0;
-    ComposeRAM(&pBuffer, bufferSize, bDATonly, bBinary, eeprom_size);
-    FILE* pFile = fopen(outputFilename, "wb");
-    if (pFile)
+    if (!bFileTreeOutputOnly)
     {
-        fwrite(pBuffer, bufferSize, 1, pFile);
-        fclose(pFile);
-    }
+        unsigned char* pBuffer = NULL;
+        int bufferSize = 0;
+        ComposeRAM(&pBuffer, bufferSize, bDATonly, bBinary, eeprom_size);
+        FILE* pFile = fopen(outputFilename, "wb");
+        if (pFile)
+        {
+            fwrite(pBuffer, bufferSize, 1, pFile);
+            fclose(pFile);
+        }
 
-    if (!bQuiet)
-    {
-       if (s_pCompilerData->psize < 65536) {
-           printf("Program size is %d bytes\n", ((unsigned short*)pBuffer)[7]);
-       }
-       else {
-           printf("Program size is %d bytes\n", s_pCompilerData->psize);
-       }
-    }
+        if (!bQuiet)
+        {
+           printf("Program size is %d bytes\n", bufferSize);
+        }
 
-    delete [] pBuffer;
+        delete [] pBuffer;
+    }
 
     if (bVerbose && !bQuiet && !bDATonly)
     {
@@ -549,14 +537,17 @@ void ComposeRAM(unsigned char** ppBuffer, int& bufferSize, bool bDATonly, bool b
         unsigned int pcurr = pbase + pubaddr;                                                         // Current program start = object base + public address (first public method)
         unsigned int dcurr = dbase + 4 + (s_pCompilerData->first_pub_parameters << 2) + publocs;      // current data stack pointer = data base + 4 + FirstParams*4 + publocs
 
-        if (bBinary) {
+        if (bBinary)
+        {
            // reset ram
            *ppBuffer = new unsigned char[vbase];
            memset(*ppBuffer, 0, vbase);
            bufferSize = vbase;
         }
-        else {
-           if (vbase + 8 > eeprom_size) {
+        else
+        {
+           if (vbase + 8 > eeprom_size)
+           {
               printf("WARNING: Eeprom size exceeded by %d longs.\n", (vbase + 8 - eeprom_size) >> 2);
               eeprom_size = vbase + 8;
            }
@@ -613,7 +604,6 @@ char* LoadFile(char* pFilename, int* pnLength)
     FILE* pFile = OpenFileInPath(pFilename, "rb");
     if (pFile != NULL)
     {
-#ifdef USE_PREPROCESSOR
         if (s_bPreprocess)
         {
             pp_push_file_struct(&preproc, pFile, pFilename);
@@ -622,7 +612,6 @@ char* LoadFile(char* pFilename, int* pnLength)
             *pnLength = strlen(pBuffer);
         }
         else
-#endif
         {
             // get the length of the file by seeking to the end and using ftell
             fseek(pFile, 0, SEEK_END);
@@ -685,10 +674,10 @@ void CleanObjectHeap()
     }
 }
 
-bool CompileSubObject(char* pFileName, bool bQuiet)
+bool CompileSubObject(char* pFileName, bool bQuiet, bool bFileTreeOutputOnly)
 {
     // need to do locate file here
-    return CompileRecursively(pFileName, bQuiet);
+    return CompileRecursively(pFileName, bQuiet, bFileTreeOutputOnly);
 }
 
 int GetData(unsigned char* pDest, char* pFileName, int nMaxSize)
@@ -874,19 +863,16 @@ void UnicodeToPASCII(char* pBuffer, int nBufferLength, char* pPASCIIBuffer)
 /*7E0*/ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
     };
 
+    // detect Unicode or ASCII form
     bool bUnicode = false;
     bool bUtf8 = false;
-#ifdef USE_PREPROCESSOR
     if (s_bPreprocess)
     {
         // preprocessor outputs utf8 encoded data, so just force it
         bUnicode = true;
         bUtf8 = true;
     }
-    else
-#endif
-    // detect Unicode or ASCII form
-    if (*((short*)(&pBuffer[0])) == -257) // -257 == 0xFEFF which is the UTF-16 BOM character for Little Endian
+    else if (*((short*)(&pBuffer[0])) == -257) // -257 == 0xFEFF which is the UTF-16 BOM character for Little Endian
     {
         bUnicode = true;
     }
@@ -1003,8 +989,13 @@ void PrintError(const char* pFilename, const char* pErrorString)
     printf("Line:\n%s\nOffending Item: %s\n", errorLine, errorItem);
 }
 
-bool CompileRecursively(char* pFilename, bool bQuiet)
+bool CompileRecursively(char* pFilename, bool bQuiet, bool bFileTreeOutputOnly)
 {
+    if (s_nObjStackPtr > 0 && (!bQuiet || bFileTreeOutputOnly))
+    {
+        char spaces[] = "                              \0";
+        printf("%s|-%s\n", &spaces[32-(s_nObjStackPtr<<1)], pFilename);
+    }
     s_nObjStackPtr++;
     if (s_nObjStackPtr > ObjFileStackLimit)
     {
@@ -1012,7 +1003,6 @@ bool CompileRecursively(char* pFilename, bool bQuiet)
         return false;
     }
 
-#ifdef USE_PREPROCESSOR
     void *definestate = 0;
     if (s_bPreprocess)
     {
@@ -1022,7 +1012,6 @@ bool CompileRecursively(char* pFilename, bool bQuiet)
         }
         definestate = pp_get_define_state(&preproc);
     }
-#endif
     GetPASCIISource(pFilename);
 
     if (s_pCompilerData->source == NULL)
@@ -1062,20 +1051,19 @@ bool CompileRecursively(char* pFilename, bool bQuiet)
 
         for (int i = 0; i < numObjects; i++)
         {
-            if (!CompileSubObject(&filenames[i<<8], bQuiet))
+            if (!CompileSubObject(&filenames[i<<8], bQuiet, bFileTreeOutputOnly))
             {
                 return false;
             }
         }
 
         // redo first pass on object
-#ifdef USE_PREPROCESSOR
         if (s_bPreprocess)
         {
             // undo any defines in sub-objects
             pp_restore_define_state(&preproc, definestate);
         }
-#endif
+
         GetPASCIISource(pFilename);
         pErrorString = Compile1();
         if (pErrorString != 0)
