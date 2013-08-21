@@ -51,8 +51,10 @@ void ComposeRAM(unsigned char** ppBuffer, int& bufferSize, bool bDATonly, bool b
 // code for handling directory paths (used with -I option)
 //
 
-#define PATH_MAX 256
+#define MAX_FILES 2048
+
 #if defined(WIN32)
+#define PATH_MAX 256
 #define DIR_SEP     '\\'
 #define DIR_SEP_STR "\\"
 #else
@@ -72,6 +74,9 @@ static PathEntry **pNextPathEntry = &path;
 static PathEntry *define = NULL;
 static PathEntry **pNextDefineEntry = &define;
 static char lastfullpath[PATH_MAX];
+
+static int numFilesAccessed = 0;
+static char filesAccessed[MAX_FILES][PATH_MAX];
 
 const char *MakePath(PathEntry *entry, const char *name)
 {
@@ -129,6 +134,25 @@ FILE* OpenFileInPath(const char *name, const char *mode)
             }
         }
     }
+    else
+    {
+#ifdef WIN32
+        if (_fullpath(lastfullpath, name, PATH_MAX) == NULL)
+#else
+        if (realpath(name, lastfullpath) == NULL)
+#endif
+        {
+            strcpy(lastfullpath, name);
+        }
+    }
+
+    strcpy(filesAccessed[numFilesAccessed++], lastfullpath);
+    if (numFilesAccessed > MAX_FILES)
+    {
+        printf("FATAL ERROR: Too many files!\n");
+        exit(2);
+    }
+
     return file;
 }
 
@@ -165,12 +189,13 @@ usage: openspin\n\
          [ -e ]                 output eeprom file format\n\
          [ -c ]                 output only DAT sections\n\
          [ -d ]                 dump out doc mode\n\
-         [ -t ]                 output just the object file tree (forces quiet mode, and doesn't output a file)\n\
+         [ -t ]                 output just the object file tree\n\
+         [ -f ]                 output a list of filenames for use in archiving\n\
          [ -q ]                 quiet mode (suppress banner and non-error text)\n\
          [ -v ]                 verbose output\n\
          [ -p ]                 disable the preprocessor\n\
          [ -a ]                 use alternative preprocessor rules\n\
-         [ -D <define> ]        add a define (must have -p before any of these)\n\
+         [ -D <define> ]        add a define\n\
          [ -M <size> ]          size of eeprom (up to 16777216 bytes)\n\
          <name.spin>            spin file to compile\n\
 \n");
@@ -189,6 +214,7 @@ int main(int argc, char* argv[])
     unsigned int  eeprom_size = 32768;
     s_bPreprocess = true;
     bool bFileTreeOutputOnly = false;
+    bool bFileListOutputOnly = false;
 
     // get the arguments
     for(int i = 1; i < argc; i++)
@@ -291,6 +317,10 @@ int main(int argc, char* argv[])
                 bFileTreeOutputOnly = true;
                 break;
 
+            case 'f':
+                bFileListOutputOnly = true;
+                break;
+
             case 'b':
                 bBinary = true;
                 break;
@@ -333,7 +363,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    if (bFileTreeOutputOnly)
+    if (bFileTreeOutputOnly || bFileListOutputOnly)
     {
         bQuiet = true;
     }
@@ -448,7 +478,7 @@ int main(int argc, char* argv[])
         printf("Done.\n");
     }
 
-    if (!bFileTreeOutputOnly)
+    if (!bFileTreeOutputOnly && !bFileListOutputOnly)
     {
         unsigned char* pBuffer = NULL;
         int bufferSize = 0;
@@ -466,6 +496,28 @@ int main(int argc, char* argv[])
         }
 
         delete [] pBuffer;
+    }
+
+    if (bFileListOutputOnly)
+    {
+        for (int i = 0; i < numFilesAccessed; i++)
+        {
+            for (int j = i+1; j < numFilesAccessed; j++)
+            {
+                if (strcmp(filesAccessed[i], filesAccessed[j]) == 0)
+                {
+                    filesAccessed[j][0] = 0;
+                }
+            }
+        }
+
+        for (int i = 0; i < numFilesAccessed; i++)
+        {
+            if (filesAccessed[i][0] != 0)
+            {
+                printf("%s\n", filesAccessed[i]);
+            }
+        }
     }
 
     if (bVerbose && !bQuiet && !bDATonly)
@@ -1006,10 +1058,6 @@ bool CompileRecursively(char* pFilename, bool bQuiet, bool bFileTreeOutputOnly)
     void *definestate = 0;
     if (s_bPreprocess)
     {
-        if (!bQuiet)
-        {
-           printf("preprocessing %s\n", pFilename);
-        }
         definestate = pp_get_define_state(&preproc);
     }
     GetPASCIISource(pFilename);
