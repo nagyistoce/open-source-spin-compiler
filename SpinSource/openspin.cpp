@@ -53,8 +53,11 @@ void ComposeRAM(unsigned char** ppBuffer, int& bufferSize, bool bDATonly, bool b
 
 #define MAX_FILES 2048
 
+#ifndef PATH_MAX
+#define PATH_MAX 1024
+#endif
+
 #if defined(WIN32)
-#define PATH_MAX 256
 #define DIR_SEP     '\\'
 #define DIR_SEP_STR "\\"
 #else
