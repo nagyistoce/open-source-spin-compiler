@@ -644,10 +644,15 @@ void ComposeRAM(unsigned char** ppBuffer, int& bufferSize, bool bDATonly, bool b
     }
     else
     {
-        unsigned int size = s_pCompilerData->psize - 12;
+        unsigned int objsize = *((unsigned short*)&(s_pCompilerData->obj[4]));
+        if (s_pCompilerData->psize > 65535)
+        {
+            objsize = s_pCompilerData->psize;
+        }
+        unsigned int size = objsize - 4 - (s_pCompilerData->obj[7] * 4);
         *ppBuffer = new unsigned char[size];
         bufferSize = size;
-        memcpy(&((*ppBuffer)[0]), &(s_pCompilerData->obj[12]), size);
+        memcpy(&((*ppBuffer)[0]), &(s_pCompilerData->obj[8 + (s_pCompilerData->obj[7] * 4)]), size);
     }
 }
 
