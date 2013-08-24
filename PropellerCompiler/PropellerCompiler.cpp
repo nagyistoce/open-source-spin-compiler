@@ -1334,11 +1334,14 @@ bool CompileObjBlocks()
     }
 
     // align obj_ptr to long
-    while ((g_pCompilerData->obj_ptr & 0x00000003) != 0)
+    if (!g_pCompilerData->bDATonly)
     {
-        if (!EnterObj(0))
+        while ((g_pCompilerData->obj_ptr & 0x00000003) != 0)
         {
-            return false;
+            if (!EnterObj(0))
+            {
+                return false;
+            }
         }
     }
 

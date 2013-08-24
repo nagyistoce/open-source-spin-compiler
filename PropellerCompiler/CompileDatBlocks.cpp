@@ -265,10 +265,10 @@ bool CompileDatBlocks_AsmDirective(bool bSymbol, bool& bResSymbol, int& size)
             break;
         case dir_fit:
             {
-                if (!CompileDatBlocks_Advance(bSymbol, bResSymbol, size))
-                {
-                    return false;
-                }
+                //if (!CompileDatBlocks_Advance(bSymbol, bResSymbol, size))
+                //{
+                //    return false;
+                //}
                 int fit = 0x1F0;
                 if (!g_pElementizer->CheckElement(type_end))
                 {
