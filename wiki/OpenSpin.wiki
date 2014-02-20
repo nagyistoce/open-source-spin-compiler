@@ -23,6 +23,6 @@ openspin.exe is a command line wrapper for the compiler library. You give it a s
 [Downloads Binary build downloads are available.]
 
 == Thanks ==
-Thanks to Steve Denson, for the Makefile and testing on linux! 
-Thanks to David Betz for testing on Mac OSX.
-Thanks to Eric Smith for providing the code and helping with integrating the preprocessor.
+Thanks to Steve Denson, for the Makefile and testing on linux!<br>
+Thanks to David Betz for testing on Mac OSX.<br>
+Thanks to Eric Smith for providing the code and helping with integrating the preprocessor.<br>
