@@ -279,8 +279,8 @@ static SymbolTableEntryDataTable symbols[] =
     {type_loc_long,         0,                  "RESULT",       0,                  false}, //variables
 
     {type_con,              0,                  "FALSE",        0,                  false}, //constants
-    {type_con,              0xFFFFFFFF,         "TRUE",         0,                  false},
-    {type_con,              0x80000000,         "NEGX",         0,                  false},
+    {type_con,              -1,                 "TRUE",         0,                  false},
+    {type_con,              ~0x7FFFFFFF,        "NEGX",         0,                  false},
     {type_con,              0x7FFFFFFF,         "POSX",         0,                  false},
     {type_con_float,        0x40490FDB,         "PI",           0,                  false},
 

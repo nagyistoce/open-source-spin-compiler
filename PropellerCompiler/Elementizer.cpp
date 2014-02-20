@@ -461,12 +461,36 @@ bool Elementizer::GetNext(bool& bEof)
                 currentChar = pSource[m_sourceOffset++];
 
                 bool bDoOneChar = false;
+                bool bDoTwoChar = false;
+
                 // if the next char is not whitespace or eol
                 if (currentChar > ' ')
                 {
+                    // three char symbol
+
+                    // assign second char into symbol
+                    m_currentSymbol[symbolOffset++] = currentChar;
+
+                    // read third char into symbol
+                    m_currentSymbol[symbolOffset++] = pSource[m_sourceOffset++];
+
+                    // terminate symbol
+                    m_currentSymbol[symbolOffset] = 0;
+
+                    m_pSymbolEntry = m_pSymbolEngine->FindSymbol(m_currentSymbol);
+                    if (m_pSymbolEntry == 0)
+                    {
+                        bDoTwoChar = true;
+                        symbolOffset--;
+                    }
+                }
+
+                if (bDoTwoChar)
+                {
                     // two char symbol
 
-                    m_currentSymbol[symbolOffset++] = currentChar;
+                    // back up so we point at last char of symbol
+                    m_sourceOffset--;
 
                     // terminate symbol
                     m_currentSymbol[symbolOffset] = 0;
@@ -492,7 +516,6 @@ bool Elementizer::GetNext(bool& bEof)
                     m_pSymbolEntry = m_pSymbolEngine->FindSymbol(m_currentSymbol);
                     if (m_pSymbolEntry == 0)
                     {
-                        // do error_op
                         error = error_uc;
                     }
                 }

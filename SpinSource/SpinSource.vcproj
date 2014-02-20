@@ -192,7 +192,23 @@
 			>
 		</File>
 		<File
+			RelativePath=".\objectheap.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\objectheap.h"
+			>
+		</File>
+		<File
 			RelativePath=".\openspin.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\pathentry.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\pathentry.h"
 			>
 		</File>
 		<File
@@ -217,6 +233,14 @@
 		</File>
 		<File
 			RelativePath=".\preprocess.h"
+			>
+		</File>
+		<File
+			RelativePath=".\textconvert.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\textconvert.h"
 			>
 		</File>
 	</Files>

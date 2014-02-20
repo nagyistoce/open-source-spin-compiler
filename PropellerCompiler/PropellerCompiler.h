@@ -13,8 +13,13 @@
 #ifndef _PROPELLER_COMPILER_H_
 #define _PROPELLER_COMPILER_H_
 
-#ifdef GCC
+#if __GNUC__
+// if GCC version is 4.8 or greater use stricmp, else use strcasecmp
+#if __GNUC__ > 4 || (__GNUC__ == 4 && (__GNUC_MINOR__ >= 8 ))
+#define _stricmp stricmp
+#else
 #define _stricmp strcasecmp
+#endif
 #endif
 
 //

@@ -37,34 +37,10 @@
 #include <stdarg.h>
 #include "flexbuf.h"
 #include "preprocess.h"
+#include "pathentry.h"
 
 #ifdef _MSC_VER
 #define strdup _strdup
-#endif
-
-
-struct PathEntry
-{
-    PathEntry *next;
-    char path[1];
-};
-
-#if TEST
-#define PATH_MAX 256
-#if defined(WIN32)
-#define DIR_SEP     '\\'
-#define DIR_SEP_STR "\\"
-#else
-#define DIR_SEP     '/'
-#define DIR_SEP_STR "/"
-#endif
-static PathEntry *path;
-static PathEntry **pNextPathEntry = &path;
-static const char *MakePath(PathEntry *entry, const char *name);
-#else
-extern PathEntry *path;
-extern PathEntry **pNextPathEntry;
-extern const char *MakePath(PathEntry *entry, const char *name);
 #endif
 
 /*
@@ -304,12 +280,22 @@ pp_push_file(struct preprocess *pp, const char *name)
     FILE *f;
 
     f = fopen(name, "rb");
-    if (!f) {
+    if (!f)
+    {
        // try opening file using path
-        for (PathEntry* entry = path; entry != NULL; entry = entry->next)
+        PathEntry* entry = NULL;
+        while(!f)
         {
-            f = fopen(MakePath(entry, name), "rb");
-            if (f != NULL)
+            const char* pTryPath = MakeNextPath(&entry, name);
+            if (pTryPath)
+            {
+                f = fopen(pTryPath, "rb");
+                if (f != NULL)
+                {
+                    break;
+                }
+            }
+            else
             {
                 break;
             }
@@ -943,27 +929,6 @@ preprocess(const char *filename, bool alternate)
     return result;
 }
 
-const char *MakePath(PathEntry *entry, const char *name)
-{
-    static char fullpath[PATH_MAX];
-    sprintf(fullpath, "%s%c%s", entry->path, DIR_SEP, name);
-    return fullpath;
-}
-
-bool AddPath(const char *path)
-{
-    PathEntry* entry = (PathEntry*)new char[(sizeof(PathEntry) + strlen(path))];
-    if (!(entry))
-    {
-        return false;
-    }
-    strcpy(entry->path, path);
-    *pNextPathEntry = entry;
-    pNextPathEntry = &entry->next;
-    entry->next = NULL;
-    return true;
-}
-
 /* Usage - display a usage message and exit */
 static void Usage(void)
 {
@@ -971,7 +936,7 @@ static void Usage(void)
     fprintf(stderr, "\
 usage: spin\n\
          [ -I <path> ]     add a directory to the include path\n\
-         [ -d ]            use alternate preprocessing rules\n\
+         [ -a ]            use alternate preprocessing rules\n\
          <name.spin>       spin file to preprocess\n\
 \n");
 }
@@ -1009,8 +974,9 @@ main(int argc, char **argv)
                 AddPath(p);
                 break;
 
-            case 'h':
+            case 'a':
                 alternate = 1;
+                break;
 
             default:
                 Usage();

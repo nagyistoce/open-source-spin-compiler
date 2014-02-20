@@ -57,7 +57,7 @@ bool PrintString(const char* theString)
 
 bool PrintSymbol(const char* pSymbolName, unsigned char type, int value, int value_2)
 {
-    char tempStr[64];
+    char tempStr[symbol_limit + 64];
     sprintf(tempStr, "TYPE: %02X", type);
     if (!PrintString(tempStr))
     {

@@ -2,31 +2,36 @@ OS:=$(shell uname)
 CC=gcc
 CXX=g++
 ifeq ($(OS),Darwin)
-	CFLAGS+=-DGCC -Wall -g
+	CFLAGS+=-Wall -g
 else
-	CFLAGS+=-DGCC -Wall -g -static
+	CFLAGS+=-Wall -g -static
 endif
+CXXFLAGS += $(CFLAGS)
 
-
-NAME=openspin
 TARGET=openspin
-MAIN=SpinSource/$(TARGET)
-FLEXBUF=SpinSource/flexbuf
-PREPROC=SpinSource/preprocess
-MAINOBJ=$(MAIN).o $(FLEXBUF).o $(PREPROC).o
-MAINSRC=$(MAIN).cpp $(FLEXBUF).c $(PREPROC).c
+SRCDIR=SpinSource
+OBJ=$(SRCDIR)/openspin.o \
+	$(SRCDIR)/flexbuf.o \
+	$(SRCDIR)/preprocess.o \
+	$(SRCDIR)/textconvert.o \
+	$(SRCDIR)/pathentry.o \
+	$(SRCDIR)/objectheap.o \
+
 LIBDIR=PropellerCompiler
 LIBNAME=$(LIBDIR)/libopenspin.a
 
+all: $(LIBNAME) $(OBJ) Makefile
+	$(CXX) -o $(TARGET) $(CXXFLAGS) $(OBJ) $(LIBNAME)
 
-all: $(LIBNAME) Makefile
-	$(CXX) -o $(NAME) $(CFLAGS) $(MAINSRC) $(LIBNAME)
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
 
+%.o: %.c
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
 
 $(LIBNAME):
 	make -C $(LIBDIR) all
 
-
 clean:
-	rm -rf $(MAINOBJ) $(LIBNAME)
+	rm -rf $(OBJ) $(LIBNAME) $(TARGET).exe
 	make -C $(LIBDIR) clean

@@ -2,9 +2,9 @@ OS:=$(shell uname)
 CC=gcc
 CXX=g++
 ifeq ($(OS),Darwin)
-	CFLAGS+=-DGCC -Wall -g
+	CFLAGS+=-Wall -g
 else
-	CFLAGS+=-DGCC -Wall -g -static
+	CFLAGS+=-Wall -g -static
 endif
 CXXFLAGS += $(CFLAGS)
 
