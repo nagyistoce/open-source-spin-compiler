@@ -19,6 +19,9 @@ PropellerCompiler.cpp/h contain the interface to the compiler. Look at openspin.
 == openspin.exe ==
 openspin.exe is a command line wrapper for the compiler library. You give it a spin file and it passes it through the compiler and produces a .binary (or optional .eeprom) file with the same base name as the passed in spin file. There are several [CommandLine command line options] available. Run openspin.exe with no arguments to get a usage description.
 
+== Binary Downloads ==
+[Downloads Binary build downloads are available.]
+
 == Thanks ==
 Thanks to Steve Denson, for the Makefile and testing on linux! 
 Thanks to David Betz for testing on Mac OSX.
