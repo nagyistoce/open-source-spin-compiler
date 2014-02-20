@@ -11,7 +11,7 @@
 //
 #include <string.h>
 
-#include "..\PropellerCompiler\PropellerCompiler.h"
+#include "../PropellerCompiler/PropellerCompiler.h"
 #include "objectheap.h"
 
 // Object heap (compile-time objects)
