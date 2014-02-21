@@ -674,6 +674,7 @@ bool CompileSubBlocksId()
     {
         g_pCompilerData->error = true;
         g_pCompilerData->error_msg = g_pErrorStrings[error_nprf];
+        g_pCompilerData->source_start = g_pCompilerData->source_finish;
         return false;
     }
     if (!CompileSubBlocksId_Compile(block_pri, bFirst))

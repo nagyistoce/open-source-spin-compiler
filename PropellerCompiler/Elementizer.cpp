@@ -678,6 +678,10 @@ int Elementizer::GetCurrentLineNumber(int &offsetToStartOfLine, int& offsetToEnd
             lineCount++;
         }
     }
+    if (offsetToStartOfLine == -1)
+    {
+        offsetToStartOfLine = 0;
+    }
     scanEnd = m_pCompilerData->source_start;
     while (pSource[scanEnd] != 0)
     {
