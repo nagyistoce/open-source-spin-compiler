@@ -815,15 +815,25 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s_pCompilerData->info_count; i++)
         {
             char szTemp[256];
+            szTemp[0] = '*';
+            szTemp[1] = 0;
+            int length = 0;
+            int start = 0;
             if (s_pCompilerData->info_type[i] == info_pub || s_pCompilerData->info_type[i] == info_pri)
             {
-                strncpy(szTemp, &s_pCompilerData->source[s_pCompilerData->info_data2[i]], s_pCompilerData->info_data3[i] - s_pCompilerData->info_data2[i]);
-                szTemp[s_pCompilerData->info_data3[i] - s_pCompilerData->info_data2[i]] = 0;
+                length = s_pCompilerData->info_data3[i] - s_pCompilerData->info_data2[i];
+                start = s_pCompilerData->info_data2[i];
             }
-            else
+            else if (s_pCompilerData->info_type[i] != info_dat && s_pCompilerData->info_type[i] != info_dat_symbol)
             {
-                strncpy(szTemp, &s_pCompilerData->source[s_pCompilerData->info_start[i]], s_pCompilerData->info_finish[i] - s_pCompilerData->info_start[i]);
-                szTemp[s_pCompilerData->info_finish[i] - s_pCompilerData->info_start[i]] = 0;
+                length = s_pCompilerData->info_finish[i] - s_pCompilerData->info_start[i];
+                start = s_pCompilerData->info_start[i];
+            }
+
+            if (length > 0 && length < 256)
+            {
+                strncpy(szTemp, &s_pCompilerData->source[start], length);
+                szTemp[length] = 0;
             }
 
             switch(s_pCompilerData->info_type[i])
@@ -837,8 +847,15 @@ int main(int argc, char* argv[])
                 case info_pub_param:
                     {
                         char szTemp2[256];
-                        strncpy(szTemp2, &s_pCompilerData->source[s_pCompilerData->info_data2[i]], s_pCompilerData->info_data3[i] - s_pCompilerData->info_data2[i]);
-                        szTemp2[s_pCompilerData->info_data3[i] - s_pCompilerData->info_data2[i]] = 0;
+                        szTemp2[0] = '*';
+                        szTemp2[1] = 0;
+                        length = s_pCompilerData->info_data3[i] - s_pCompilerData->info_data2[i];
+                        start = s_pCompilerData->info_data2[i];
+                        if (length > 0 && length < 256)
+                        {
+                            strncpy(szTemp2, &s_pCompilerData->source[start], length);
+                            szTemp2[length] = 0;
+                        }
                         printf("PARAM, %s, %s, %d, %d\n", szTemp2, szTemp, s_pCompilerData->info_data0[i], s_pCompilerData->info_data1[i]);
                     }
                     break;
