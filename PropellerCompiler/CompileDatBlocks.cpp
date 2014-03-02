@@ -26,6 +26,9 @@ void CompileDatBlocks_EnterInfo(int datstart, int objstart)
     g_pCompilerData->inf_finish = g_pElementizer->GetSourcePtr();
     g_pCompilerData->inf_data0 = objstart;
     g_pCompilerData->inf_data1 = g_pCompilerData->obj_ptr;
+    g_pCompilerData->inf_data2 = 0;
+    g_pCompilerData->inf_data3 = 0;
+    g_pCompilerData->inf_data4 = 0;
     g_pCompilerData->inf_type = info_dat;
     EnterInfo();
 }
@@ -35,8 +38,10 @@ void CompileDatBlocks_EnterSymbol(bool bResSymbol, int size)
     int value_1 = g_pCompilerData->obj_ptr;
     int value_2 = g_pCompilerData->cog_org;
     g_pCompilerData->inf_data0 = value_1;
-    g_pCompilerData->inf_data2 = value_2;
     g_pCompilerData->inf_data1 = size;
+    g_pCompilerData->inf_data2 = value_2;
+    g_pCompilerData->inf_data3 = 0;
+    g_pCompilerData->inf_data4 = 0;
     g_pCompilerData->inf_type = info_dat_symbol;
     EnterInfo();
     g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, bResSymbol ? type_dat_long_res : (size == 0 ? type_dat_byte : (size == 1 ? type_dat_word : type_dat_long)), value_1, value_2);

@@ -79,6 +79,7 @@ struct HashNode
     int         key;
     Hashable*   pValue;
     HashNode*   pNext;
+    HashNode*   pNextList;
 
     ~HashNode()
     {
@@ -91,10 +92,14 @@ class HashTable
 private:
     HashNode**  m_pTable;
     int         m_tableSize;
+    HashNode*   m_pListHead;
+    HashNode*   m_pListTail;
 
 public:
     HashTable(int tableSize)
         : m_tableSize(tableSize)
+        , m_pListHead(0)
+        , m_pListTail(0)
     {
         m_pTable = new HashNode*[tableSize];
         for(int i = 0; i < m_tableSize; i++)
@@ -114,6 +119,7 @@ public:
         }
         delete [] m_pTable;
         m_pTable = 0;
+        m_pListHead = m_pListTail = 0;
     }
 
     // insert a new node in the table with the given key and value
@@ -125,8 +131,34 @@ public:
         pNode->key = key;
         pNode->pValue = pValue;
         pNode->pNext = m_pTable[bucket];
+        pNode->pNextList = 0;
 
         m_pTable[bucket] = pNode;
+
+        if ( m_pListTail )
+        {
+            m_pListTail->pNextList = pNode;
+            m_pListTail = pNode;
+        }
+        else
+        {
+            m_pListHead = m_pListTail = pNode;
+        }
+    }
+
+    HashNode* First()
+    {
+        return m_pListHead;
+    }
+
+    HashNode* Last()
+    {
+        return m_pListTail;
+    }
+
+    HashNode* Next(HashNode* pCurrent)
+    {
+        return (pCurrent != 0) ? pCurrent->pNextList : 0;
     }
 
     // find the first node with a matching key

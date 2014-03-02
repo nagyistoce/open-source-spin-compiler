@@ -47,11 +47,12 @@ struct CompilerDataInternal : public CompilerData
     // always have the values available to just pass as parameters.
     int             inf_start;         // Start of source related to this info
     int             inf_finish;        // End (+1) of source related to this info
-    int             inf_type;          // 0 = CON, 1 CON(float), 2 = DAT, 3 = DAT Symbol, 4 = PUB, 5 = PRI
-    int             inf_data0;         // Info field 0: if CON = Value, if DAT/PUB/PRI = Start addr in object, if DAT Symbol = value
-    int             inf_data1;         // Info field 1: if DAT/PUB/PRI = End+1 addr in object, if DAT Symbol = size
-    int             inf_data2;         // Info field 2: if PUB/PRI = Start of name in source, if DAT Symbol = offset (in cog)
-    int             inf_data3;         // Info field 3: if PUB/PRI = End+1 of name in source
+    int             inf_type;          // 0 = CON, 1 CON(float), 2 = DAT, 3 = DAT Symbol, 4 = PUB, 5 = PRI, 6 = PUB_PARAM, 7 = PRI_PARAM
+    int             inf_data0;         // Info field 0: if CON = Value, if DAT/PUB/PRI = Start addr in object, if DAT Symbol = value, if PARAM = pub/pri index
+    int             inf_data1;         // Info field 1: if DAT/PUB/PRI = End+1 addr in object, if DAT Symbol = size, if PARAM = param index
+    int             inf_data2;         // Info field 2: if PUB/PRI/PARAM = Start of pub/pri name in source, if DAT Symbol = offset (in cog)
+    int             inf_data3;         // Info field 3: if PUB/PRI/PARAM = End+1 of pub/pri name in source
+    int             inf_data4;         // Info field 4: if PUB/PRI = index|param count
 
     // used by GetFileName/AddFileName
     char            filename[255];

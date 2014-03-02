@@ -30,13 +30,13 @@
 #define language_version    '0'
 #define loc_limit           0x8000
 #define var_limit           0x8000
-#define obj_limit           0x1000000 // was 0x0000F000
+#define min_obj_limit       0x0000F000
 #define file_limit          32
 #define data_limit          0x10000
 #define info_limit          1000
 #define distiller_limit     0x4000
 #define symbol_limit        256 // was 32 
-#define symbol_table_limit  0x8000
+//#define symbol_table_limit  0x8000
 #define pubcon_list_limit   0x2000
 #define block_nest_limit    8
 #define block_stack_limit   256
@@ -53,7 +53,9 @@ enum infoType
     info_dat,           // data0/1 = obj start/finish
     info_dat_symbol,    // data0 = value, data2 = offset, data1 = size
     info_pub,           // data0/1 = obj start/finish, data2/3 = name start/finish
-    info_pri            // data0/1 = obj start/finish, data2/3 = name start/finish
+    info_pri,           // data0/1 = obj start/finish, data2/3 = name start/finish
+    info_pub_param,     // data0 = pub index, data3 = param index, data2/3 = pub name start/finish
+    info_pri_param      // data0 = pri index, data3 = param index, data2/3 = pri name start/finish
 };
 
 // Propeller Compiler Interface Structure
@@ -76,8 +78,9 @@ struct CompilerData
     int             doc_limit;      // Max size of document data
     int             doc_length;     // Length of document data
 
-    unsigned char   obj[obj_limit];     // Object binary
+    unsigned char*  obj;                // Object binary for currently being compiled obj
     int             obj_ptr;            // Length of Object binary
+    int             obj_limit;          // size of buffer allocated for obj
 
     int             obj_files;                      // Number of object files referenced by source
     char            obj_filenames[file_limit*256];  // Object filenames
@@ -110,11 +113,12 @@ struct CompilerData
     int             info_count;                     // Number of information records for object
     int             info_start[info_limit];         // Start of source related to this info
     int             info_finish[info_limit];        // End (+1) of source related to this info
-    int             info_type[info_limit];          // 0 = CON, 1 CON(float), 2 = DAT, 3 = DAT Symbol, 4 = PUB, 5 = PRI
-    int             info_data0[info_limit];         // Info field 0: if CON = Value, if DAT/PUB/PRI = Start addr in object, if DAT Symbol = value
-    int             info_data1[info_limit];         // Info field 1: if DAT/PUB/PRI = End+1 addr in object, if DAT Symbol = size
-    int             info_data2[info_limit];         // Info field 2: if PUB/PRI = Start of name in source, if DAT Symbol = offset (in cog)
-    int             info_data3[info_limit];         // Info field 3: if PUB/PRI = End+1 of name in source
+    int             info_type[info_limit];          // 0 = CON, 1 CON(float), 2 = DAT, 3 = DAT Symbol, 4 = PUB, 5 = PRI, 6 = PUB_PARAM, 7 = PRI_PARAM
+    int             info_data0[info_limit];         // Info field 0: if CON = Value, if DAT/PUB/PRI = Start addr in object, if DAT Symbol = value, if PARAM = pub/pri index
+    int             info_data1[info_limit];         // Info field 1: if DAT/PUB/PRI = End+1 addr in object, if DAT Symbol = size, if PARAM = param index
+    int             info_data2[info_limit];         // Info field 2: if PUB/PRI/PARAM = Start of pub/pri name in source, if DAT Symbol = offset (in cog)
+    int             info_data3[info_limit];         // Info field 3: if PUB/PRI/PARAM = End+1 of pub/pri name in source
+    int             info_data4[info_limit];         // Info field 4: if PUB/PRI = index|param count
 
     int             distilled_longs;                // Total longs optimized out of object
     unsigned char   first_pub_parameters;

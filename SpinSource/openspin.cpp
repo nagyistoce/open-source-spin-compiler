@@ -24,8 +24,8 @@
 #define ImageLimit          32768   // Max size of Propeller Application image file
 #define ObjFileStackLimit   16
 
-#define ListLimit           5000000
-#define DocLimit            5000000
+#define ListLimit           2000000
+#define DocLimit            2000000
 
 #define MAX_FILES           2048    // an object can only reference 32 other objects and only 32 dat files, so the worst case is 32*32*2 files
 
@@ -40,7 +40,7 @@ static char s_filesAccessed[MAX_FILES][PATH_MAX];
 static void Banner(void)
 {
     fprintf(stdout, "Propeller Spin/PASM Compiler \'OpenSpin\' (c)2012-2013 Parallax Inc. DBA Parallax Semiconductor.\n");
-    fprintf(stdout, "Compiled on %s\n",__DATE__);
+    fprintf(stdout, "Compiled on %s %s\n",__DATE__, __TIME__);
 }
 
 /* Usage - display a usage message and exit */
@@ -64,6 +64,7 @@ usage: openspin\n\
          [ -a ]                 use alternative preprocessor rules\n\
          [ -D <define> ]        add a define\n\
          [ -M <size> ]          size of eeprom (up to 16777216 bytes)\n\
+         [ -s ]                 dump PUB & CON symbol information for top object\n\
          <name.spin>            spin file to compile\n\
 \n");
 }
@@ -483,6 +484,7 @@ int main(int argc, char* argv[])
     s_bUsePreprocessor = true;
     bool bFileTreeOutputOnly = false;
     bool bFileListOutputOnly = false;
+    bool bDumpSymbols = false;
 
     // go through the command line arguments, skipping over any -D
     for(int i = 1; i < argc; i++)
@@ -613,6 +615,10 @@ int main(int argc, char* argv[])
                 bVerbose = true;
                 break;
 
+            case 's':
+                bDumpSymbols = true;
+                break;
+
             case 'h':
             default:
                 Usage();
@@ -638,7 +644,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    if (bFileTreeOutputOnly || bFileListOutputOnly)
+    if (bFileTreeOutputOnly || bFileListOutputOnly || bDumpSymbols)
     {
         bQuiet = true;
     }
@@ -746,12 +752,25 @@ int main(int argc, char* argv[])
     s_pCompilerData->list = new char[ListLimit];
     s_pCompilerData->list_limit = ListLimit;
     memset(s_pCompilerData->list, 0, ListLimit);
-    s_pCompilerData->doc = new char[DocLimit];
-    s_pCompilerData->doc_limit = DocLimit;
-    memset(s_pCompilerData->doc, 0, DocLimit);
+
+    if (bDocMode && !bQuiet && !bDATonly)
+    {
+        s_pCompilerData->doc = new char[DocLimit];
+        s_pCompilerData->doc_limit = DocLimit;
+        memset(s_pCompilerData->doc, 0, DocLimit);
+    }
+    else
+    {
+        s_pCompilerData->doc = 0;
+        s_pCompilerData->doc_limit = 0;
+    }
     s_pCompilerData->bDATonly = bDATonly;
     s_pCompilerData->bBinary = bBinary;
     s_pCompilerData->eeprom_size = eeprom_size;
+
+    // allocate space for obj based on eeprom size command line option
+    s_pCompilerData->obj_limit = eeprom_size > min_obj_limit ? eeprom_size : min_obj_limit;
+    s_pCompilerData->obj = new unsigned char[s_pCompilerData->obj_limit];
 
     // copy filename into obj_title, and chop off the .spin
     strcpy(s_pCompilerData->obj_title, infile);
@@ -771,7 +790,7 @@ int main(int argc, char* argv[])
         printf("Done.\n");
     }
 
-    if (!bFileTreeOutputOnly && !bFileListOutputOnly)
+    if (!bFileTreeOutputOnly && !bFileListOutputOnly && !bDumpSymbols)
     {
         unsigned char* pBuffer = NULL;
         int bufferSize = 0;
@@ -789,6 +808,45 @@ int main(int argc, char* argv[])
         }
 
         delete [] pBuffer;
+    }
+
+    if (bDumpSymbols)
+    {
+        for (int i = 0; i < s_pCompilerData->info_count; i++)
+        {
+            char szTemp[256];
+            if (s_pCompilerData->info_type[i] == info_pub || s_pCompilerData->info_type[i] == info_pri)
+            {
+                strncpy(szTemp, &s_pCompilerData->source[s_pCompilerData->info_data2[i]], s_pCompilerData->info_data3[i] - s_pCompilerData->info_data2[i]);
+                szTemp[s_pCompilerData->info_data3[i] - s_pCompilerData->info_data2[i]] = 0;
+            }
+            else
+            {
+                strncpy(szTemp, &s_pCompilerData->source[s_pCompilerData->info_start[i]], s_pCompilerData->info_finish[i] - s_pCompilerData->info_start[i]);
+                szTemp[s_pCompilerData->info_finish[i] - s_pCompilerData->info_start[i]] = 0;
+            }
+
+            switch(s_pCompilerData->info_type[i])
+            {
+                case info_con:
+                    printf("CON, %s, %d\n", szTemp, s_pCompilerData->info_data0[i]);
+                    break;
+                case info_con_float:
+                    printf("CONF, %s, %f\n", szTemp, *((float*)&(s_pCompilerData->info_data0[i])));
+                    break;
+                case info_pub_param:
+                    {
+                        char szTemp2[256];
+                        strncpy(szTemp2, &s_pCompilerData->source[s_pCompilerData->info_data2[i]], s_pCompilerData->info_data3[i] - s_pCompilerData->info_data2[i]);
+                        szTemp2[s_pCompilerData->info_data3[i] - s_pCompilerData->info_data2[i]] = 0;
+                        printf("PARAM, %s, %s, %d, %d\n", szTemp2, szTemp, s_pCompilerData->info_data0[i], s_pCompilerData->info_data1[i]);
+                    }
+                    break;
+                case info_pub:
+                    printf("PUB, %s, %d, %d\n", szTemp, s_pCompilerData->info_data4[i] & 0xFFFF, s_pCompilerData->info_data4[i] >> 16);
+                    break;
+            }
+        }
     }
 
     if (bFileListOutputOnly)

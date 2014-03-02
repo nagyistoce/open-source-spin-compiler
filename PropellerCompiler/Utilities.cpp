@@ -540,11 +540,12 @@ void EnterInfo()
     g_pCompilerData->info_data1[index] = g_pCompilerData->inf_data1;
     g_pCompilerData->info_data2[index] = g_pCompilerData->inf_data2;
     g_pCompilerData->info_data3[index] = g_pCompilerData->inf_data3;
+    g_pCompilerData->info_data4[index] = g_pCompilerData->inf_data4;
 }
 
 bool EnterObj(unsigned char value)
 {
-    if (g_pCompilerData->obj_ptr < obj_limit)
+    if (g_pCompilerData->obj_ptr < g_pCompilerData->obj_limit)
     {
         g_pCompilerData->obj[g_pCompilerData->obj_ptr++] = value;
     }
@@ -560,7 +561,7 @@ bool EnterObj(unsigned char value)
 
 bool EnterObjLong(int value)
 {
-    if (g_pCompilerData->obj_ptr+4 < obj_limit)
+    if (g_pCompilerData->obj_ptr+4 < g_pCompilerData->obj_limit)
     {
         g_pCompilerData->obj[g_pCompilerData->obj_ptr++] = (unsigned char)value;
         value >>= 8;
@@ -689,8 +690,12 @@ bool ConAssign(bool bFloat, int value)
     }
     else
     {
-        g_pCompilerData->inf_type = info_con + (bFloat ? 1 : 0);
+        g_pCompilerData->inf_type = bFloat ? info_con_float : info_con;
         g_pCompilerData->inf_data0 = value;
+        g_pCompilerData->inf_data1 = 0;
+        g_pCompilerData->inf_data2 = 0;
+        g_pCompilerData->inf_data3 = 0;
+        g_pCompilerData->inf_data4 = 0;
         EnterInfo();
 
         if (!AddSymbolToPubConList())

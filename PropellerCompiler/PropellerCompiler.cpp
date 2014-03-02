@@ -216,14 +216,20 @@ const char* Compile2()
 
         g_pCompilerData->list_length = g_pCompilerData->print_length;
 
-        SetPrint(g_pCompilerData->doc, g_pCompilerData->doc_limit);
-
-        if (!CompileDoc())
+        if (g_pCompilerData->doc_limit > 0)
         {
-            return g_pCompilerData->error_msg;
-        }
+            SetPrint(g_pCompilerData->doc, g_pCompilerData->doc_limit);
 
-        g_pCompilerData->doc_length = g_pCompilerData->print_length;
+            if (!CompileDoc())
+            {
+                return g_pCompilerData->error_msg;
+            }
+            g_pCompilerData->doc_length = g_pCompilerData->print_length;
+        }
+        else
+        {
+            g_pCompilerData->doc_length = 0;
+        }
     }
 
     g_pCompilerData->source_start = 0;
@@ -619,7 +625,7 @@ bool CompileSubBlocksId_Compile(int blockType, bool &bFirst)
                     int value = params;
                     value <<= 8;
                     value |= (g_pCompilerData->obj_ptr >> 2) & 0xFF;
-                    g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, type_sub, value);
+                    g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, type_sub, value, blockType);
 #ifdef RPE_DEBUG
                     printf("Pub/Pri %s %d (%d, %d)\n", g_pCompilerData->symbolBackup, value, params, g_pCompilerData->obj_ptr);
 #endif
@@ -1108,20 +1114,21 @@ bool CompileSubBlocks_Compile(int blockType, int &subCount)
         {
             if (!bEof)
             {
-                g_pCompilerData->inf_start = g_pCompilerData->source_start;
-                g_pCompilerData->inf_data0 = g_pCompilerData->obj_ptr;
+                int saved_inf_start = g_pCompilerData->source_start;
+                int saved_inf_data0 = g_pCompilerData->obj_ptr;
 
                 if (!g_pElementizer->GetNext(bEof))
                 {
                     return false;
                 }
 
-                g_pCompilerData->inf_data2 = g_pCompilerData->source_start;
-                g_pCompilerData->inf_data3 = g_pCompilerData->source_finish;
+                int saved_inf_data2 = g_pCompilerData->source_start;
+                int saved_inf_data3 = g_pCompilerData->source_finish;
 
                 // locals is tracking the number of bytes, so 4 per long
                 // we start at 4 because every sub has a result local
                 int locals = 4;
+                int paramCount = 0;
 
                 // are there parameters?
                 if (g_pElementizer->CheckElement(type_left))
@@ -1138,6 +1145,25 @@ bool CompileSubBlocks_Compile(int blockType, int &subCount)
                             g_pElementizer->BackupSymbol();
 
                             g_pSymbolEngine->AddSymbol(g_pCompilerData->symbolBackup, type_loc_long, locals, 0, true); // add to temp symbols
+
+                            g_pCompilerData->inf_start = g_pCompilerData->source_start;
+                            g_pCompilerData->inf_finish = g_pCompilerData->source_finish;
+                            g_pCompilerData->inf_data0 = subCount;
+                            g_pCompilerData->inf_data1 = paramCount;
+                            g_pCompilerData->inf_data2 = saved_inf_data2;
+                            g_pCompilerData->inf_data3 = saved_inf_data3;
+                            g_pCompilerData->inf_data4 = 0;
+                            if (blockType == block_pub)
+                            {
+                                g_pCompilerData->inf_type = info_pub_param;
+                            }
+                            else
+                            {
+                                g_pCompilerData->inf_type = info_pri_param;
+                            }
+                            EnterInfo();
+
+                            paramCount++;
 #ifdef RPE_DEBUG
                             printf("temp loc: %s %d\n", g_pCompilerData->symbolBackup, locals);
 #endif
@@ -1278,8 +1304,13 @@ bool CompileSubBlocks_Compile(int blockType, int &subCount)
                     return false;
                 }
 
+                g_pCompilerData->inf_start = saved_inf_start;
                 g_pCompilerData->inf_finish = g_pElementizer->GetSourcePtr();
+                g_pCompilerData->inf_data0 = saved_inf_data0;
                 g_pCompilerData->inf_data1 = g_pCompilerData->obj_ptr;
+                g_pCompilerData->inf_data2 = saved_inf_data2;
+                g_pCompilerData->inf_data3 = saved_inf_data3;
+                g_pCompilerData->inf_data4 = (paramCount << 16) | subCount;
                 if (blockType == block_pub)
                 {
                     g_pCompilerData->inf_type = info_pub;
@@ -1416,8 +1447,8 @@ bool DistillObjBlocks()
 {
     if (g_pCompilerData->compile_mode == 0)
     {
-       // Cannot "distill" programs that go over 64k boundary
-       if (g_pCompilerData->obj_ptr <= 65536)
+       // Cannot "distill" large objects (eeprom_size set to greater than min_obj_limit(64k))
+       if (g_pCompilerData->obj_ptr <= min_obj_limit)
        {
            return DistillObjects();
        }
@@ -1453,7 +1484,7 @@ bool CompileFinal()
         }
 
         // shift contents of obj up 4 bytes (to insert vsize/psize at front)
-        memmove(&(g_pCompilerData->obj[4]), &(g_pCompilerData->obj[0]), obj_limit - 4);
+        memmove(&(g_pCompilerData->obj[4]), &(g_pCompilerData->obj[0]), g_pCompilerData->obj_limit - 4);
         // insert vsize_psize at beginning on obj
         *((int*)(&g_pCompilerData->obj[0])) = vsize_psize;
         // also store them separately in case they are larger than 65536
@@ -1737,7 +1768,7 @@ bool CompileDoc_ScanInterface(bool bPrint, int& nCount)
         return false;
     }
 
-    // start off count with the lenth of the pub name
+    // start off count with the length of the pub name
     nCount = g_pCompilerData->source_finish - g_pCompilerData->source_start;
 
     if (bPrint)

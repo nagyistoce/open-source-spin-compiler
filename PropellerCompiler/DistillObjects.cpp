@@ -223,7 +223,7 @@ void DistillEliminate()
     }
 }
 
-static unsigned char s_rebuildBuffer[obj_limit];
+static unsigned char s_rebuildBuffer[min_obj_limit];
 void DistillRebuild()
 {
     int disPtr = 0;
